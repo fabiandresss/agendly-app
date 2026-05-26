@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iniciar sesión — AGENDLY</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <style>
+    body {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    /* Panel izquierdo */
+    .brand-panel {
+      background: var(--brand-primary);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      width: 500px; height: 500px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      top: -120px; right: -160px;
+    }
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      bottom: 60px; left: -80px;
+    }
+    .brand-logo {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      z-index: 1;
+    }
+    .brand-logo-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+    }
+    .brand-content {
+      position: relative;
+      z-index: 1;
+    }
+    .brand-content h1 {
+      font-family: var(--font-display);
+      font-size: 34px;
+      font-weight: 700;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 14px;
+    }
+    .brand-content p {
+      color: rgba(255,255,255,0.72);
+      font-size: 15px;
+      line-height: 1.65;
+      max-width: 340px;
+    }
+    .brand-features {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+      z-index: 1;
+    }
+    .brand-feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.82);
+      font-size: 14px;
+    }
+    .brand-feature::before {
+      content: '';
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.5);
+      flex-shrink: 0;
+    }
+
+    /* Panel derecho */
+    .form-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+      overflow-y: auto;
+    }
+    .form-box {
+      width: 100%;
+      max-width: 400px;
+    }
+    .form-heading {
+      margin-bottom: 32px;
+    }
+    .form-heading h2 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+    .form-heading p {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .fgroup {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 16px;
+    }
+    .flabel {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap .form-input {
+      padding-right: 42px;
+    }
+    .toggle-pw {
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      font-size: 17px;
+      padding: 2px;
+      transition: color var(--transition-fast);
+    }
+    .toggle-pw:hover { color: var(--text-secondary); }
+    .form-footer {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 22px;
+    }
+    .form-footer a {
+      color: var(--brand-primary);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .form-footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 768px) {
+      body { grid-template-columns: 1fr; }
+      .brand-panel { display: none; }
+      .form-panel { padding: 32px 24px; align-items: flex-start; padding-top: 52px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="brand-panel">
+    <a href="#" class="brand-logo">AGENDLY<div class="brand-logo-dot"></div></a>
+    <div class="brand-content">
+      <h1>Tu negocio,<br>en piloto automático.</h1>
+      <p>Gestiona reservas, clientes y horarios sin WhatsApp, sin desorden, sin perder tiempo.</p>
+    </div>
+    <div class="brand-features">
+      <div class="brand-feature">Reservas automáticas 24/7</div>
+      <div class="brand-feature">Confirmaciones por WhatsApp y email</div>
+      <div class="brand-feature">Dashboard con métricas reales</div>
+      <div class="brand-feature">Sin tarjeta de crédito para empezar</div>
+    </div>
+  </div>
+
+  <div class="form-panel">
+    <div class="form-box animate-in">
+
+      <div class="form-heading">
+        <h2>Bienvenido de nuevo</h2>
+        <p>Ingresa a tu panel de administración.</p>
+      </div>
+
+      <div class="alert alert-error mb-4" id="login-error">
+        <span id="login-error-text"></span>
+      </div>
+
+      <form id="login-form" novalidate>
+        <div class="fgroup">
+          <label class="flabel" for="email">Email</label>
+          <input type="email" id="email" class="form-input"
+                 placeholder="tu@email.com" autocomplete="email"/>
+        </div>
+
+        <div class="fgroup" style="margin-bottom:24px;">
+          <label class="flabel" for="password">Contraseña</label>
+          <div class="input-wrap">
+            <input type="password" id="password" class="form-input"
+                   placeholder="Tu contraseña" autocomplete="current-password"/>
+            <button type="button" class="toggle-pw"
+                    onclick="togglePw()" aria-label="Mostrar contraseña">
+              <i id="pw-icon" class="ti ti-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login" class="btn btn-primary btn-lg btn-full">
+          Iniciar sesión
+        </button>
+      </form>
+
+      <div class="form-footer">
+        ¿No tienes cuenta?
+        <a href="register.html">Crear cuenta gratis</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:3000';
+
+    if (sessionStorage.getItem('agendly_token')) {
+      const slug = sessionStorage.getItem('agendly_slug');
+      window.location.href = slug ? `app.html?negocio=${slug}` : 'onboarding.html';
+    }
+
+    function togglePw() {
+      const input = document.getElementById('password');
+      const icon  = document.getElementById('pw-icon');
+      input.type  = input.type === 'password' ? 'text' : 'password';
+      icon.className = input.type === 'password' ? 'ti ti-eye' : 'ti ti-eye-off';
+    }
+
+    function showError(msg) {
+      document.getElementById('login-error-text').textContent = msg;
+      document.getElementById('login-error').classList.add('visible');
+    }
+    function hideError() {
+      document.getElementById('login-error').classList.remove('visible');
+    }
+
+    document.getElementById('email').addEventListener('input', hideError);
+    document.getElementById('password').addEventListener('input', hideError);
+
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      hideError();
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showError('Completa todos los campos');
+        return;
+      }
+
+      const btn = document.getElementById('btn-login');
+      btn.classList.add('btn-loading');
+      btn.disabled = true;
+
+      try {
+        const res  = await fetch(`${API}/api/auth/login`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ email, password }),
+        });
+        const json = await res.json();
+
+        if (!res.ok) {
+          showError(json.error || 'Email o contraseña incorrectos');
+          return;
+        }
+
+        sessionStorage.setItem('agendly_token',   json.access_token);
+        sessionStorage.setItem('agendly_email',   json.user.email);
+        sessionStorage.setItem('agendly_user_id', json.user.id);
+
+        // Verificar si ya tiene negocio
+        const bizRes  = await fetch(`${API}/api/auth/my-business`, {
+          headers: { 'Authorization': `Bearer ${json.access_token}` },
+        });
+
+        if (bizRes.ok) {
+          const bizJson = await bizRes.json();
+          sessionStorage.setItem('agendly_slug', bizJson.data.slug);
+          window.location.href = `app.html?negocio=${bizJson.data.slug}`;
+        } else {
+          window.location.href = 'onboarding.html';
+        }
+
+      } catch {
+        showError('Error de conexión con el servidor');
+      } finally {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+      }
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('login-form').requestSubmit();
+    });
+  </script>
+</body>
+</html>

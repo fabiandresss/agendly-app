@@ -1,0 +1,133 @@
+### Obtener negocio por slug
+GET http://localhost:3000/api/businesses/barberia-tony
+
+### Listar servicios
+GET http://localhost:3000/api/businesses/barberia-tony/services
+
+### Listar profesionales
+GET http://localhost:3000/api/businesses/barberia-tony/professionals
+
+### Crear una reserva (ajusta la fecha a mañana)
+POST http://localhost:3000/api/appointments
+Content-Type: application/json
+
+{
+  "businessSlug": "barberia-tony",
+  "serviceId": "50e9c8b8-a41e-4d91-b15e-fdd8ae70f9ec",
+  "professionalId": "0c9dc4af-7d46-4a85-aaee-1d73c2884e3e",
+  "clientName": "Benjamin Guzman",
+  "clientPhone": "+56912345678",
+  "clientEmail": "benjabenjita@email.com",
+  "scheduledAt": "2026-04-16T14:00:00-04:00",
+  "notes": "Servicio excelente"
+}
+
+### Registrar cuenta del dueño
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "tony@barberia.com",
+  "password": "segura123",
+  "businessSlug": "barberia-tony"
+}
+
+### Login
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "tony@barberia.com",
+  "password": "segura123"
+}
+
+### Probar endpoint protegido con el token del login
+GET http://localhost:3000/api/businesses/barberia-tony/appointments
+Authorization: Bearer eyJhbGciOiJFUzI1NiIsImtpZCI6ImQ2ZTRhZTk3LTQyODYtNDAxYy1hMWU4LWY0ZDMwNDNkZDA5NyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Jwc3Zxanhldmdrc3BpdWptb2thLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIzNWY5OTgyNy01ZjM4LTQ3MTQtYWI4Ni1lNGFkNGNhMmY4MjUiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc1ODU5NDY0LCJpYXQiOjE3NzU4NTU4NjQsImVtYWlsIjoidG9ueUBiYXJiZXJpYS5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc3NTg1NTg2NH1dLCJzZXNzaW9uX2lkIjoiMDllYzc5OGUtOWVlOS00YTM1LTk0OGMtMzI1YjBiMDY5ODUyIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.qPeWhKPSiMEAloflutbau-ssMSRs_gppZttRhXiD1qbEK1A2t6DYa3U08lpdRpG_U1u9EpgNVaJMEZtsF7vnyw
+
+### Probar sin token — debe devolver 401
+GET http://localhost:3000/api/businesses/barberia-tony/appointments
+
+
+
+
+
+
+### 1. Obtener IDs reales del negocio
+GET http://localhost:3000/api/businesses/barberia-tony/services
+
+###
+GET http://localhost:3000/api/businesses/barberia-tony/professionals
+
+### 2. Consulta de disponibilidad básica (reemplaza los UUIDs)
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2026-04-15
+
+### 3. Con intervalo de 15 minutos
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2026-04-15&interval=15
+
+### 4. Día sin horario (domingo = día 0)
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2026-04-12
+
+### 5. Fecha pasada — debe dar 400
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2024-01-01
+
+### 6. Sin parámetros — debe dar 400 con lista de faltantes
+GET http://localhost:3000/api/availability
+
+
+### Crear reserva con tu número real (debe estar en el sandbox)
+POST http://localhost:3000/api/appointments
+Content-Type: application/json
+
+{
+  "businessSlug":   "barberia-tony",
+  "serviceId":      "9490ecd8-73b6-4961-ac15-6a425e986242",
+  "professionalId": "0c9dc4af-7d46-4a85-aaee-1d73c2884e3e",
+  "clientName":     "me gustas mucho montse",
+  "clientPhone":    "+56995904020",
+  "scheduledAt":    "2026-04-20T10:00:00-05:00"
+}
+
+
+POST http://localhost:3000/api/appointments
+Content-Type: application/json
+
+{
+  "businessSlug":   "barberia-tony",
+  "serviceId":      "9490ecd8-73b6-4961-ac15-6a425e986242",
+  "professionalId": "0c9dc4af-7d46-4a85-aaee-1d73c2884e3e",
+  "clientName":     "Fabián Andrés",
+  "clientPhone":    "+56949663900",
+  "clientEmail":    "fabianarmijo610@gmail.com",
+  "scheduledAt":    "2026-04-20T10:00:00-09:00"
+}
+
+### Summary del dashboard
+GET http://localhost:3000/api/dashboard/barberia-tony/summary
+Authorization: Bearer TU_TOKEN
+
+### Reservas por día (últimos 14 días)
+GET http://localhost:3000/api/dashboard/barberia-tony/by-period?period=day&limit=14
+Authorization: Bearer TU_TOKEN
+
+### Crear servicio nuevo
+POST http://localhost:3000/api/admin/barberia-tony/services
+Authorization: Bearer TU_TOKEN
+Content-Type: application/json
+
+{ "name": "Coloración", "duration_min": 90, "price": 25000 }
+
+### Reemplazar horarios de un profesional
+PUT http://localhost:3000/api/admin/barberia-tony/schedules/UUID-DEL-PROFESIONAL
+Authorization: Bearer TU_TOKEN
+Content-Type: application/json
+
+{
+  "schedules": [
+    { "day_of_week": 1, "start_time": "09:00", "end_time": "18:00" },
+    { "day_of_week": 2, "start_time": "09:00", "end_time": "18:00" },
+    { "day_of_week": 3, "start_time": "09:00", "end_time": "18:00" },
+    { "day_of_week": 4, "start_time": "09:00", "end_time": "18:00" },
+    { "day_of_week": 5, "start_time": "09:00", "end_time": "16:00" }
+  ]
+}

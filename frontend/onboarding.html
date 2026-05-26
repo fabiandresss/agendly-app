@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Configura tu negocio — AGENDLY</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 40px 16px 80px; }
+
+    .onboarding-header { text-align: center; margin-bottom: 40px; }
+    .onboarding-logo {
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 700;
+      color: var(--brand-primary);
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 24px;
+    }
+    .onboarding-header h1 { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+    .onboarding-header p  { color: var(--text-secondary); font-size: 15px; }
+
+    /* Stepper */
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 40px;
+      width: 100%;
+      max-width: 560px;
+    }
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      position: relative;
+    }
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--border-default);
+      transition: background var(--transition-slow);
+      z-index: 0;
+    }
+    .step-item.completed:not(:last-child)::after { background: var(--brand-primary); }
+    .step-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border-default);
+      background: var(--surface-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600;
+      color: var(--text-muted);
+      transition: all var(--transition-slow);
+      position: relative; z-index: 1;
+    }
+    .step-item.active   .step-dot { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-primary-light); }
+    .step-item.completed .step-dot { border-color: var(--brand-primary); background: var(--brand-primary); color: white; }
+    .step-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: center; }
+    .step-item.active    .step-label { color: var(--brand-primary); }
+    .step-item.completed .step-label { color: var(--text-secondary); }
+
+    /* Contenedor del wizard */
+    .wizard-card {
+      width: 100%;
+      max-width: 560px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      box-shadow: var(--shadow-md);
+    }
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; animation: fadeIn 0.25s ease both; }
+
+    .step-title { font-family: var(--font-display); font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .step-subtitle { color: var(--text-secondary); font-size: 14px; margin-bottom: 28px; }
+
+    /* Tipos de negocio */
+    .business-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .business-type-btn {
+      border: 1.5px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      cursor: pointer;
+      background: var(--surface-card);
+      text-align: left;
+      transition: all var(--transition-base);
+    }
+    .business-type-btn:hover { border-color: var(--brand-primary); background: var(--brand-primary-light); }
+    .business-type-btn.selected { border-color: var(--brand-primary); background: var(--brand-primary-light); }
+    .business-type-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+    .business-type-name { font-weight: 600; font-size: 13px; color: var(--text-primary); display: block; }
+
+    /* Lista dinámica de servicios y profesionales */
+    .dynamic-list { display: flex; flex-direction: column; gap: 10px; }
+    .dynamic-item {
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      position: relative;
+      background: var(--surface-subtle);
+    }
+    .dynamic-item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dynamic-item-remove {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px;
+      border-radius: var(--radius-sm);
+      transition: color var(--transition-fast);
+    }
+    .dynamic-item-remove:hover { color: var(--color-error); }
+    .add-item-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border: 1.5px dashed var(--border-default);
+      border-radius: var(--radius-lg);
+      background: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      transition: all var(--transition-base);
+      width: 100%;
+    }
+    .add-item-btn:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-primary-light); }
+
+    /* Slug preview */
+    .slug-preview {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 13px;
+      margin-top: 8px;
+      display: none;
+    }
+    .slug-preview.visible { display: block; }
+    .slug-preview .url { color: var(--text-secondary); }
+    .slug-preview .slug-part { color: var(--brand-primary); font-weight: 600; }
+    .slug-status { font-size: 12px; margin-top: 4px; }
+
+    /* Resumen */
+    .summary-section { margin-bottom: 20px; }
+    .summary-section h4 { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .summary-list { display: flex; flex-direction: column; gap: 4px; }
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-primary);
+      padding: 6px 10px;
+      background: var(--surface-subtle);
+      border-radius: var(--radius-sm);
+    }
+    .summary-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand-primary); flex-shrink: 0; }
+
+    /* Navegación del wizard */
+    .wizard-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-default);
+    }
+    .wizard-nav-left { font-size: 13px; color: var(--text-secondary); }
+
+    @media (max-width: 600px) {
+      .wizard-card { padding: 24px; }
+      .business-types { grid-template-columns: 1fr 1fr; }
+      .dynamic-item-grid { grid-template-columns: 1fr; }
+      .step-label { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="onboarding-header">
+    <a href="#" class="onboarding-logo">AGENDLY</a>
+    <h1>Configura tu negocio</h1>
+    <p>Solo toma 2 minutos. Puedes editar todo después.</p>
+  </div>
+
+  <!-- Stepper -->
+  <div class="stepper" id="stepper">
+    <div class="step-item active" data-step="1">
+      <div class="step-dot">1</div>
+      <span class="step-label">Tu negocio</span>
+    </div>
+    <div class="step-item" data-step="2">
+      <div class="step-dot">2</div>
+      <span class="step-label">Servicios</span>
+    </div>
+    <div class="step-item" data-step="3">
+      <div class="step-dot">3</div>
+      <span class="step-label">Equipo</span>
+    </div>
+    <div class="step-item" data-step="4">
+      <div class="step-dot">4</div>
+      <span class="step-label">Confirmar</span>
+    </div>
+  </div>
+
+  <!-- Wizard card -->
+  <div class="wizard-card">
+
+    <!-- PASO 1: Datos del negocio -->
+    <div class="wizard-step active" id="step-1">
+      <h2 class="step-title">¿Qué tipo de negocio tienes?</h2>
+      <p class="step-subtitle">Esto nos ayuda a personalizar tu experiencia.</p>
+
+      <div class="business-types mb-6" id="business-types">
+        <button type="button" class="business-type-btn" data-value="barberia" onclick="selectBusinessType(this)">
+          <span class="business-type-icon">✂️</span>
+          <span class="business-type-name">Barbería</span>
+        </button>
+        <button type="button" class="business-type-btn" data-value="peluqueria" onclick="selectBusinessType(this)">
+          <span class="business-type-icon">💇</span>
+          <span class="business-type-name">Peluquería</span>
+        </button>
+        <button type="button" class="business-type-btn" data-value="estetica" onclick="selectBusinessType(this)">
+          <span class="business-type-icon">💅</span>
+          <span class="business-type-name">Estética</span>
+        </button>
+        <button type="button" class="business-type-btn" data-value="spa" onclick="selectBusinessType(this)">
+          <span class="business-type-icon">🧖</span>
+          <span class="business-type-name">Spa / Masajes</span>
+        </button>
+        <button type="button" class="business-type-btn" data-value="salud" onclick="selectBusinessType(this)">
+          <span class="business-type-icon">🏥</span>
+          <span class="business-type-name">Salud</span>
+        </button>
+        <button type="button" class="business-type-btn" data-value="otro" onclick="selectBusinessType(this)">
+          <span class="business-type-icon">🏪</span>
+          <span class="business-type-name">Otro</span>
+        </button>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label" for="biz-name">Nombre del negocio <span class="required">*</span></label>
+        <input type="text" id="biz-name" class="form-input" placeholder="Ej: Barbería Tony"
+               oninput="generateSlugPreview(this.value)"/>
+        <span class="form-error" id="error-biz-name"></span>
+      </div>
+
+      <div class="form-group mb-4">
+        <label class="form-label" for="biz-slug">
+          URL de tu página de reservas <span class="required">*</span>
+        </label>
+        <input type="text" id="biz-slug" class="form-input" placeholder="barberia-tony"
+               oninput="onSlugInput(this.value)"/>
+        <div class="slug-preview" id="slug-preview">
+          <span class="url">agendly.app/<span class="slug-part" id="slug-preview-text"></span></span>
+          <div class="slug-status" id="slug-status"></div>
+        </div>
+        <span class="form-error" id="error-biz-slug"></span>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="biz-phone">Teléfono</label>
+          <input type="tel" id="biz-phone" class="form-input" placeholder="+56912345678"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="biz-address">Dirección</label>
+          <input type="text" id="biz-address" class="form-input" placeholder="Calle 123"/>
+        </div>
+      </div>
+
+      <div class="wizard-nav">
+        <span class="wizard-nav-left">Paso 1 de 4</span>
+        <button class="btn btn-primary" onclick="goToStep(2)">
+          Continuar
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 2: Servicios -->
+    <div class="wizard-step" id="step-2">
+      <h2 class="step-title">¿Qué servicios ofreces?</h2>
+      <p class="step-subtitle">Agrega al menos uno. Puedes agregar más después.</p>
+
+      <div class="dynamic-list mb-4" id="services-list"></div>
+
+      <button type="button" class="add-item-btn" onclick="addService()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar servicio
+      </button>
+
+      <div class="wizard-nav">
+        <button class="btn btn-ghost btn-sm" onclick="goToStep(1)">← Atrás</button>
+        <button class="btn btn-primary" onclick="goToStep(3)">
+          Continuar
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 3: Profesionales -->
+    <div class="wizard-step" id="step-3">
+      <h2 class="step-title">¿Quién trabaja en tu negocio?</h2>
+      <p class="step-subtitle">Agrega a tu equipo. Puedes ser solo tú.</p>
+
+      <div class="dynamic-list mb-4" id="professionals-list"></div>
+
+      <button type="button" class="add-item-btn" onclick="addProfessional()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar profesional
+      </button>
+
+      <div class="wizard-nav">
+        <button class="btn btn-ghost btn-sm" onclick="goToStep(2)">← Atrás</button>
+        <button class="btn btn-primary" onclick="goToStep(4)">
+          Revisar y confirmar
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 4: Resumen y confirmación -->
+    <div class="wizard-step" id="step-4">
+      <h2 class="step-title">Todo listo para comenzar</h2>
+      <p class="step-subtitle">Revisa que todo esté correcto antes de crear tu negocio.</p>
+
+      <div id="summary-content"></div>
+
+      <div class="alert alert-error" id="setup-error">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="setup-error-text"></span>
+      </div>
+
+      <div class="wizard-nav">
+        <button class="btn btn-ghost btn-sm" onclick="goToStep(3)">← Atrás</button>
+        <button class="btn btn-primary btn-lg" id="btn-create" onclick="createBusiness()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Crear mi negocio
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /wizard-card -->
+
+  <script>
+    const API   = 'http://localhost:3000';
+    const TOKEN = sessionStorage.getItem('agendly_token');
+
+    if (!TOKEN) window.location.href = 'login.html';
+
+    // ── Estado del wizard ──
+    const state = {
+      currentStep:  1,
+      businessType: '',
+      bizName:      '',
+      bizSlug:      '',
+      bizPhone:     '',
+      bizAddress:   '',
+      services:     [],
+      professionals:[],
+      slugChecked:  false,
+      slugAvailable: false,
+    };
+
+    let slugCheckTimer = null;
+    let serviceCounter = 0;
+    let proCounter     = 0;
+
+    // ── Stepper visual ──
+    function updateStepper(step) {
+      document.querySelectorAll('.step-item').forEach((el, i) => {
+        el.classList.remove('active', 'completed');
+        const n = i + 1;
+        if (n < step)  el.classList.add('completed');
+        if (n === step) el.classList.add('active');
+        // Ícono de check para completados
+        const dot = el.querySelector('.step-dot');
+        if (n < step) {
+          dot.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        } else {
+          dot.textContent = n;
+        }
+      });
+    }
+
+    // ── Navegación entre pasos ──
+    function goToStep(step) {
+      // Validar paso actual antes de avanzar
+      if (step > state.currentStep && !validateStep(state.currentStep)) return;
+
+      document.getElementById(`step-${state.currentStep}`).classList.remove('active');
+      state.currentStep = step;
+      document.getElementById(`step-${step}`).classList.add('active');
+      updateStepper(step);
+
+      if (step === 4) buildSummary();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validateStep(step) {
+      if (step === 1) {
+        if (!state.businessType) {
+          alert('Selecciona el tipo de negocio'); return false;
+        }
+        const name = document.getElementById('biz-name').value.trim();
+        const slug = document.getElementById('biz-slug').value.trim();
+        if (!name) {
+          document.getElementById('error-biz-name').textContent = 'El nombre es requerido';
+          document.getElementById('error-biz-name').classList.add('visible');
+          document.getElementById('biz-name').classList.add('error');
+          return false;
+        }
+        if (!slug) {
+          document.getElementById('error-biz-slug').textContent = 'La URL es requerida';
+          document.getElementById('error-biz-slug').classList.add('visible');
+          document.getElementById('biz-slug').classList.add('error');
+          return false;
+        }
+        if (!state.slugAvailable) {
+          document.getElementById('error-biz-slug').textContent = 'Verifica que la URL esté disponible';
+          document.getElementById('error-biz-slug').classList.add('visible');
+          return false;
+        }
+        state.bizName    = name;
+        state.bizSlug    = slug;
+        state.bizPhone   = document.getElementById('biz-phone').value.trim();
+        state.bizAddress = document.getElementById('biz-address').value.trim();
+      }
+      if (step === 2) {
+        const services = collectServices();
+        if (services.length === 0) {
+          alert('Agrega al menos un servicio'); return false;
+        }
+        if (services.some(s => !s.name)) {
+          alert('Todos los servicios deben tener nombre'); return false;
+        }
+        state.services = services;
+      }
+      if (step === 3) {
+        const pros = collectProfessionals();
+        if (pros.length === 0) {
+          alert('Agrega al menos un profesional'); return false;
+        }
+        state.professionals = pros;
+      }
+      return true;
+    }
+
+    // ── Tipo de negocio ──
+    function selectBusinessType(btn) {
+      document.querySelectorAll('.business-type-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.businessType = btn.dataset.value;
+    }
+
+    // ── Slug ──
+    function generateSlugPreview(name) {
+      const slug = name.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
+      document.getElementById('biz-slug').value = slug;
+      onSlugInput(slug);
+    }
+
+    function onSlugInput(value) {
+      const clean = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (value !== clean) document.getElementById('biz-slug').value = clean;
+
+      const preview = document.getElementById('slug-preview');
+      const previewText = document.getElementById('slug-preview-text');
+
+      if (clean) {
+        preview.classList.add('visible');
+        previewText.textContent = clean;
+        document.getElementById('slug-status').textContent = '';
+        state.slugAvailable = false;
+
+        clearTimeout(slugCheckTimer);
+        slugCheckTimer = setTimeout(() => checkSlug(clean), 500);
+      } else {
+        preview.classList.remove('visible');
+      }
+    }
+
+    async function checkSlug(slug) {
+      const statusEl = document.getElementById('slug-status');
+      statusEl.textContent = 'Verificando...';
+      statusEl.style.color = 'var(--text-muted)';
+
+      try {
+        const res = await fetch(`${API}/api/businesses/${slug}`);
+        if (res.status === 404) {
+          statusEl.textContent = '✓ Disponible';
+          statusEl.style.color = 'var(--color-success)';
+          state.slugAvailable = true;
+        } else {
+          statusEl.textContent = '✗ Ya está en uso, elige otro';
+          statusEl.style.color = 'var(--color-error)';
+          state.slugAvailable = false;
+        }
+      } catch {
+        statusEl.textContent = 'No se pudo verificar';
+        state.slugAvailable = true; // asumir disponible si falla la verificación
+      }
+    }
+
+    // ── Servicios dinámicos ──
+    function addService(data = {}) {
+      const id  = ++serviceCounter;
+      const div = document.createElement('div');
+      div.className = 'dynamic-item';
+      div.id = `service-${id}`;
+      div.innerHTML = `
+        <button type="button" class="dynamic-item-remove" onclick="removeItem('service-${id}')"
+                aria-label="Eliminar servicio">×</button>
+        <div class="dynamic-item-grid">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Nombre del servicio *</label>
+            <input type="text" class="form-input svc-name" placeholder="Corte de cabello"
+                   value="${data.name || ''}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duración (min)</label>
+            <input type="number" class="form-input svc-duration" placeholder="30" min="5" value="${data.duration_min || 30}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Precio (CLP)</label>
+            <input type="number" class="form-input svc-price" placeholder="8000" min="0" value="${data.price || ''}"/>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Descripción</label>
+            <input type="text" class="form-input svc-desc" placeholder="Descripción opcional"
+                   value="${data.description || ''}"/>
+          </div>
+        </div>`;
+      document.getElementById('services-list').appendChild(div);
+    }
+
+    function collectServices() {
+      return Array.from(document.querySelectorAll('#services-list .dynamic-item')).map(item => ({
+        name:         item.querySelector('.svc-name').value.trim(),
+        duration_min: parseInt(item.querySelector('.svc-duration').value) || 30,
+        price:        parseFloat(item.querySelector('.svc-price').value) || 0,
+        description:  item.querySelector('.svc-desc').value.trim(),
+      }));
+    }
+
+    // ── Profesionales dinámicos ──
+    function addProfessional(data = {}) {
+      const id  = ++proCounter;
+      const div = document.createElement('div');
+      div.className = 'dynamic-item';
+      div.id = `pro-${id}`;
+      div.innerHTML = `
+        <button type="button" class="dynamic-item-remove" onclick="removeItem('pro-${id}')"
+                aria-label="Eliminar profesional">×</button>
+        <div class="dynamic-item-grid">
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Nombre *</label>
+            <input type="text" class="form-input pro-name" placeholder="Antonio García"
+                   value="${data.name || ''}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input pro-email" placeholder="antonio@email.com"
+                   value="${data.email || ''}"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input type="tel" class="form-input pro-phone" placeholder="+56912345678"
+                   value="${data.phone || ''}"/>
+          </div>
+        </div>`;
+      document.getElementById('professionals-list').appendChild(div);
+    }
+
+    function collectProfessionals() {
+      return Array.from(document.querySelectorAll('#professionals-list .dynamic-item')).map(item => ({
+        name:  item.querySelector('.pro-name').value.trim(),
+        email: item.querySelector('.pro-email').value.trim(),
+        phone: item.querySelector('.pro-phone').value.trim(),
+      }));
+    }
+
+    function removeItem(id) {
+      document.getElementById(id)?.remove();
+    }
+
+    // ── Resumen ──
+    function buildSummary() {
+      const services     = collectServices().filter(s => s.name);
+      const professionals = collectProfessionals().filter(p => p.name);
+      state.services      = services;
+      state.professionals = professionals;
+
+      const fmtCLP = n => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(n);
+
+      document.getElementById('summary-content').innerHTML = `
+        <div class="summary-section">
+          <h4>Tu negocio</h4>
+          <div class="summary-list">
+            <div class="summary-item"><div class="summary-dot"></div>${state.bizName}</div>
+            <div class="summary-item"><div class="summary-dot"></div>agendly.app/${state.bizSlug}</div>
+            ${state.bizPhone ? `<div class="summary-item"><div class="summary-dot"></div>${state.bizPhone}</div>` : ''}
+          </div>
+        </div>
+        <div class="summary-section">
+          <h4>Servicios (${services.length})</h4>
+          <div class="summary-list">
+            ${services.map(s => `
+              <div class="summary-item">
+                <div class="summary-dot"></div>
+                <span>${s.name}</span>
+                <span style="margin-left:auto;color:var(--text-secondary);font-size:13px;">${s.duration_min}min · ${fmtCLP(s.price)}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="summary-section">
+          <h4>Equipo (${professionals.length})</h4>
+          <div class="summary-list">
+            ${professionals.map(p => `
+              <div class="summary-item"><div class="summary-dot"></div>${p.name}</div>`).join('')}
+          </div>
+        </div>`;
+    }
+
+    // ── Crear negocio ──
+    async function createBusiness() {
+      const btn     = document.getElementById('btn-create');
+      const errorEl = document.getElementById('setup-error');
+      const errorTx = document.getElementById('setup-error-text');
+
+      errorEl.classList.remove('visible');
+      btn.classList.add('btn-loading');
+      btn.disabled = true;
+
+      try {
+        const res  = await fetch(`${API}/api/auth/setup-business`, {
+          method:  'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${TOKEN}`,
+          },
+          body: JSON.stringify({
+            name:          state.bizName,
+            slug:          state.bizSlug,
+            businessType:  state.businessType,
+            phone:         state.bizPhone   || null,
+            address:       state.bizAddress || null,
+            services:      state.services,
+            professionals: state.professionals,
+          }),
+        });
+
+        const json = await res.json();
+
+        if (!res.ok) {
+          errorTx.textContent = json.error || 'Error al crear el negocio';
+          errorEl.classList.add('visible');
+          return;
+        }
+
+        // Guardar el slug en sessionStorage
+        sessionStorage.setItem('agendly_slug', state.bizSlug);
+
+        // Ir al panel principal
+        window.location.href = `app.html?negocio=${state.bizSlug}`;
+
+      } catch (err) {
+        errorTx.textContent = 'Error de conexión con el servidor';
+        errorEl.classList.add('visible');
+      } finally {
+        btn.classList.remove('btn-loading');
+        btn.disabled = false;
+      }
+    }
+
+    // ── Inicializar con un servicio y profesional vacío ──
+    addService();
+    addProfessional();
+  </script>
+</body>
+</html>

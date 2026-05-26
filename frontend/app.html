@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AGENDLY</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    body { display: flex; background: var(--surface-page); }
+
+    .app-layout { display: grid; grid-template-columns: 240px 1fr; height: 100vh; overflow: hidden; width: 100%; }
+
+    /* SIDEBAR */
+    .sidebar { background: var(--surface-card); border-right: 1px solid var(--border-default); display: flex; flex-direction: column; height: 100vh; overflow-y: auto; overflow-x: hidden; z-index: 10; }
+    .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid var(--border-default); flex-shrink: 0; }
+    .sidebar-logo { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--brand-primary); display: flex; align-items: center; gap: 6px; }
+    .logo-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-primary-mid); }
+    .sidebar-biz { font-size: 12px; color: var(--text-secondary); margin-top: 4px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-plan { display: inline-flex; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: var(--brand-primary-light); color: var(--brand-primary); padding: 2px 8px; border-radius: var(--radius-pill); margin-top: 6px; }
+
+    .sidebar-nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+    .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 10px 4px; margin-top: 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-md); font-size: 14px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); border: none; background: none; width: 100%; text-align: left; font-family: var(--font-body); }
+    .nav-item:hover  { background: var(--surface-subtle); color: var(--text-primary); }
+    .nav-item.active { background: var(--brand-primary-light); color: var(--brand-primary); font-weight: 600; }
+    .nav-item i { font-size: 17px; flex-shrink: 0; }
+    .nav-badge { margin-left: auto; background: var(--brand-primary); color: white; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: var(--radius-pill); }
+
+    .sidebar-footer { padding: 12px 10px; border-top: 1px solid var(--border-default); flex-shrink: 0; }
+    .sidebar-user { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-md); cursor: pointer; transition: background var(--transition-fast); }
+    .sidebar-user:hover { background: var(--surface-subtle); }
+    .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .user-name  { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-email { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* MAIN */
+    .main-area { display: flex; flex-direction: column; height: 100vh; overflow: hidden; min-width: 0; }
+    .topbar { background: var(--surface-card); border-bottom: 1px solid var(--border-default); padding: 0 24px; height: 58px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar-title { font-size: 16px; font-weight: 700; font-family: var(--font-display); }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+    .icon-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: var(--radius-md); border: 1px solid var(--border-default); background: var(--surface-card); color: var(--text-secondary); cursor: pointer; font-size: 17px; transition: all var(--transition-fast); }
+    .icon-btn:hover { background: var(--surface-subtle); color: var(--text-primary); }
+    .hamburger { display: none; }
+
+    .main-content { flex: 1; overflow-y: auto; padding: 24px; }
+
+    /* SECTIONS */
+    .section { display: none; }
+    .section.active { display: block; animation: fadeIn 0.2s ease both; }
+
+    /* PAGE HEADER */
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; gap: 16px; flex-wrap: wrap; }
+    .page-header h1 { font-size: 21px; font-weight: 700; font-family: var(--font-display); margin-bottom: 2px; }
+    .page-header p  { font-size: 13px; color: var(--text-secondary); }
+
+    /* METRICS */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px 18px; }
+    .metric-icon { width: 34px; height: 34px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 17px; margin-bottom: 10px; }
+    .metric-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    .metric-value { font-size: 24px; font-weight: 700; line-height: 1; }
+    .metric-sub   { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .c-default { color: var(--text-primary); }
+    .c-yellow  { color: var(--color-warning); }
+    .c-blue    { color: #2563eb; }
+    .c-green   { color: var(--color-success); }
+    .c-red     { color: var(--color-error); }
+
+    /* CONTENT CARDS */
+    .cc { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-xl); overflow: hidden; }
+    .cc-header { padding: 14px 20px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .cc-title  { font-size: 14px; font-weight: 700; }
+    .cc-body   { padding: 20px; }
+
+    /* TABLE */
+    .tbl-wrap { overflow-x: auto; }
+    .dtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .dtable th { padding: 9px 14px; text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: var(--surface-subtle); border-bottom: 1px solid var(--border-default); white-space: nowrap; }
+    .dtable td { padding: 11px 14px; border-bottom: 1px solid var(--border-default); vertical-align: middle; }
+    .dtable tr:last-child td { border-bottom: none; }
+    .dtable tr:hover td { background: var(--surface-subtle); }
+
+    /* STATUS */
+    .sbadge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; }
+    .sbadge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .s-pending   { background: var(--color-warning-light); color: var(--color-warning); }
+    .s-pending::before   { background: var(--color-warning); }
+    .s-confirmed { background: var(--color-info-light); color: var(--color-info); }
+    .s-confirmed::before { background: var(--color-info); }
+    .s-completed { background: var(--color-success-light); color: var(--color-success); }
+    .s-completed::before { background: var(--color-success); }
+    .s-cancelled { background: var(--color-error-light); color: var(--color-error); }
+    .s-cancelled::before { background: var(--color-error); }
+
+    /* TABLE BUTTONS */
+    .tactions { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tbtn { padding: 3px 9px; border-radius: var(--radius-sm); font-size: 11.5px; font-weight: 600; border: none; cursor: pointer; font-family: var(--font-body); transition: opacity 0.12s; }
+    .tbtn:hover    { opacity: 0.8; }
+    .tbtn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .tb-confirm  { background: var(--color-info-light);    color: var(--color-info); }
+    .tb-complete { background: var(--color-success-light); color: var(--color-success); }
+    .tb-cancel   { background: var(--color-error-light);   color: var(--color-error); }
+
+    /* FILTERS */
+    .fbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .fchip { padding: 4px 13px; border-radius: var(--radius-pill); font-size: 12.5px; font-weight: 600; border: 1.5px solid var(--border-default); background: var(--surface-card); color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); font-family: var(--font-body); }
+    .fchip:hover  { border-color: var(--brand-primary); color: var(--brand-primary); }
+    .fchip.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
+    .swrap { position: relative; margin-left: auto; }
+    .swrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; }
+    .sbox { padding: 6px 11px 6px 30px; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); font-size: 13px; background: var(--surface-card); color: var(--text-primary); outline: none; width: 190px; font-family: var(--font-body); transition: border-color var(--transition-fast); }
+    .sbox:focus { border-color: var(--brand-primary); }
+
+    /* MGMT CARDS */
+    .mgmt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(265px, 1fr)); gap: 12px; }
+    .mcard { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 16px; display: flex; flex-direction: column; gap: 9px; transition: box-shadow var(--transition-fast), border-color var(--transition-fast); }
+    .mcard:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); }
+    .mcard-top  { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .mcard-name { font-weight: 700; font-size: 14px; }
+    .mcard-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; }
+    .mcard-meta span { display: flex; align-items: center; gap: 3px; }
+    .mcard-actions { display: flex; gap: 6px; margin-top: 2px; }
+
+    /* SCHEDULE */
+    .sched-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
+    .sched-card { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); overflow: hidden; }
+    .sched-head { padding: 12px 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; gap: 10px; background: var(--surface-subtle); }
+    .sched-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .sched-days { padding: 10px 16px; display: flex; flex-direction: column; gap: 4px; }
+    .sched-day { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+    .sched-day-name { width: 78px; font-weight: 600; }
+    .sched-day-off  { color: var(--text-muted); font-style: italic; }
+
+    /* BLOCKS */
+    .bitem { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .bicon { width: 34px; height: 34px; border-radius: var(--radius-md); background: var(--color-warning-light); color: var(--color-warning); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+
+    /* CLIENTS */
+    .clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+    .ccard { background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-lg); padding: 14px; display: flex; align-items: center; gap: 10px; }
+    .cavatar { width: 38px; height: 38px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+
+    /* SETTINGS */
+    .stlayout { display: grid; grid-template-columns: 180px 1fr; gap: 20px; }
+    .stnav { display: flex; flex-direction: column; gap: 2px; }
+    .stnav-item { padding: 8px 11px; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; border: none; background: none; font-family: var(--font-body); text-align: left; width: 100%; display: flex; align-items: center; gap: 7px; transition: all var(--transition-fast); }
+    .stnav-item:hover  { background: var(--surface-subtle); color: var(--text-primary); }
+    .stnav-item.active { background: var(--brand-primary-light); color: var(--brand-primary); font-weight: 600; }
+    .stpanel { display: none; }
+    .stpanel.active { display: block; animation: fadeIn 0.15s ease both; }
+    .stgroup-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-default); }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .fgroup { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+    .flabel { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+    /* MODAL */
+    .moverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .moverlay.open { display: flex; }
+    .mbox { background: var(--surface-card); border-radius: var(--radius-xl); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: fadeIn 0.18s ease both; }
+    .mheader { padding: 20px 22px 16px; border-bottom: 1px solid var(--border-default); display: flex; align-items: center; justify-content: space-between; }
+    .mtitle  { font-size: 16px; font-weight: 700; font-family: var(--font-display); }
+    .mclose  { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 22px; line-height: 1; padding: 2px; transition: color var(--transition-fast); }
+    .mclose:hover { color: var(--text-primary); }
+    .mbody   { padding: 20px 22px; }
+    .mfooter { padding: 14px 22px; border-top: 1px solid var(--border-default); display: flex; justify-content: flex-end; gap: 8px; }
+
+    /* TOAST */
+    .toast { position: fixed; bottom: 22px; right: 22px; background: var(--text-primary); color: white; padding: 11px 16px; border-radius: var(--radius-lg); font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 7px; z-index: 2000; opacity: 0; transform: translateY(6px); transition: opacity 0.2s, transform 0.2s; pointer-events: none; max-width: 300px; box-shadow: var(--shadow-lg); }
+    .toast.show    { opacity: 1; transform: translateY(0); }
+    .toast.success { background: var(--color-success); }
+    .toast.error   { background: var(--color-error); }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 44px 20px; color: var(--text-secondary); }
+    .empty i  { font-size: 38px; opacity: 0.2; display: block; margin-bottom: 10px; }
+    .empty h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .empty p  { font-size: 13px; }
+
+    /* SKELETON */
+    .skel { background: linear-gradient(90deg, var(--border-default) 25%, var(--surface-subtle) 50%, var(--border-default) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-md); }
+
+    /* CHART CONTAINER */
+    .chart-wrap { position: relative; }
+
+    /* TOP SERVICES */
+    .top-svc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+    .top-svc-rank { width: 20px; height: 20px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .top-svc-bar  { height: 4px; background: var(--brand-primary); border-radius: 2px; transition: width 0.4s; }
+
+    @media (max-width: 900px) {
+      .app-layout { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); transition: transform var(--transition-slow); z-index: 100; width: 255px; box-shadow: var(--shadow-lg); }
+      .sidebar.open { transform: translateX(0); }
+      .hamburger { display: flex !important; }
+      .stlayout  { grid-template-columns: 1fr; }
+      .two-col   { grid-template-columns: 1fr; }
+      .main-content { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+<!-- ════════════ SIDEBAR ════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-logo">AGENDLY<div class="logo-dot"></div></div>
+    <div class="sidebar-biz" id="sb-biz">Cargando...</div>
+    <div class="sidebar-plan" id="sb-plan">FREE</div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-label">General</div>
+    <button class="nav-item active" data-s="dashboard"     onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
+    <button class="nav-item"        data-s="appointments"  onclick="nav('appointments',this)"><i class="ti ti-calendar"></i>Reservas<span class="nav-badge" id="pbadge" style="display:none;"></span></button>
+
+    <div class="nav-label">Gestión</div>
+    <button class="nav-item" data-s="services"      onclick="nav('services',this)"><i class="ti ti-tools"></i>Servicios</button>
+    <button class="nav-item" data-s="professionals" onclick="nav('professionals',this)"><i class="ti ti-users"></i>Profesionales</button>
+    <button class="nav-item" data-s="schedules"     onclick="nav('schedules',this)"><i class="ti ti-clock"></i>Horarios</button>
+    <button class="nav-item" data-s="blocks"        onclick="nav('blocks',this)"><i class="ti ti-calendar-off"></i>Bloqueos</button>
+
+    <div class="nav-label">Clientes</div>
+    <button class="nav-item" data-s="clients" onclick="nav('clients',this)"><i class="ti ti-users-group"></i>Clientes</button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="nav-item" data-s="settings" onclick="nav('settings',this)" style="margin-bottom:4px;"><i class="ti ti-settings"></i>Configuración</button>
+    <div class="sidebar-user" onclick="nav('settings',document.querySelector('[data-s=settings]'))">
+      <div class="user-avatar" id="sb-av">?</div>
+      <div style="flex:1;min-width:0;">
+        <div class="user-name"  id="sb-name">—</div>
+        <div class="user-email" id="sb-email">—</div>
+      </div>
+      <i class="ti ti-chevron-right" style="font-size:13px;color:var(--text-muted);flex-shrink:0;"></i>
+    </div>
+  </div>
+</aside>
+
+<!-- ════════════ MAIN ════════════ -->
+<div class="main-area">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="icon-btn hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menú">
+        <i class="ti ti-menu-2"></i>
+      </button>
+      <div class="topbar-title" id="ttitle">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <a id="booking-link" href="#" target="_blank" class="btn btn-sm btn-secondary">
+        <i class="ti ti-external-link" style="font-size:13px;"></i>Mi página
+      </a>
+      <button class="icon-btn" onclick="refresh()" title="Actualizar" aria-label="Actualizar"><i class="ti ti-refresh"></i></button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- ───── DASHBOARD ───── -->
+    <div class="section active" id="sec-dashboard">
+  <div class="page-header">
+    <div><h1>Dashboard</h1><p id="greeting">Bienvenido</p></div>
+  </div>
+  <div class="metrics-grid" id="d-metrics">
+    <div class="metric-card"><div class="skel" style="height:80px;"></div></div>
+    <div class="metric-card"><div class="skel" style="height:80px;"></div></div>
+    <div class="metric-card"><div class="skel" style="height:80px;"></div></div>
+    <div class="metric-card"><div class="skel" style="height:80px;"></div></div>
+    <div class="metric-card"><div class="skel" style="height:80px;"></div></div>
+    <div class="metric-card"><div class="skel" style="height:80px;"></div></div>
+  </div>
+
+  <div class="two-col" style="gap:14px;margin-bottom:14px;">
+    <div class="cc">
+      <div class="cc-header">
+        <span class="cc-title">Reservas por período</span>
+        <div style="display:flex;gap:4px;">
+          <button class="fchip active" style="padding:3px 10px;font-size:12px;" onclick="chPeriod('day',this)">Días</button>
+          <button class="fchip"        style="padding:3px 10px;font-size:12px;" onclick="chPeriod('week',this)">Semanas</button>
+          <button class="fchip"        style="padding:3px 10px;font-size:12px;" onclick="chPeriod('month',this)">Meses</button>
+        </div>
+      </div>
+      <div class="cc-body chart-wrap"><canvas id="chart-period" height="200"></canvas></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="cc">
+        <div class="cc-header"><span class="cc-title">Top servicios</span></div>
+        <div class="cc-body" id="d-topsvcs"></div>
+      </div>
+      <div class="cc">
+        <div class="cc-header"><span class="cc-title">Top profesionales</span></div>
+        <div class="cc-body" id="d-toppros"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cc" style="margin-bottom:14px;">
+    <div class="cc-header"><span class="cc-title">Distribución horaria de reservas</span></div>
+    <div class="cc-body" style="overflow-x:auto;">
+      <div id="chart-hourly" style="display:flex;align-items:flex-end;gap:6px;height:100px;padding:4px 0;"></div>
+    </div>
+  </div>
+
+  <div class="cc">
+    <div class="cc-header">
+      <span class="cc-title">Últimas reservas</span>
+      <button class="btn btn-sm btn-ghost" onclick="nav('appointments',document.querySelector('[data-s=appointments]'))">Ver todas</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="dtable">
+        <thead><tr><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Estado</th></tr></thead>
+        <tbody id="d-recent"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    <!-- ───── RESERVAS ───── -->
+    <div class="section" id="sec-appointments">
+      <div class="page-header">
+        <div><h1>Reservas</h1><p>Gestiona todas las reservas de tu negocio</p></div>
+      </div>
+      <div class="cc">
+        <div class="cc-header">
+          <div class="fbar">
+            <button class="fchip active" onclick="fAppt('all',this)">Todas</button>
+            <button class="fchip" onclick="fAppt('pending',this)">Pendientes</button>
+            <button class="fchip" onclick="fAppt('confirmed',this)">Confirmadas</button>
+            <button class="fchip" onclick="fAppt('completed',this)">Completadas</button>
+            <button class="fchip" onclick="fAppt('cancelled',this)">Canceladas</button>
+          </div>
+          <div class="swrap">
+            <i class="ti ti-search"></i>
+            <input type="text" class="sbox" id="appt-search" placeholder="Buscar cliente..." oninput="srchAppt(this.value)"/>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table class="dtable">
+            <thead><tr><th>Cliente</th><th>Servicio</th><th>Profesional</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="appts-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── SERVICIOS ───── -->
+    <div class="section" id="sec-services">
+      <div class="page-header">
+        <div><h1>Servicios</h1><p>Define lo que ofrece tu negocio</p></div>
+        <button class="btn btn-primary" onclick="openSvcModal()"><i class="ti ti-plus" style="font-size:14px;"></i>Nuevo servicio</button>
+      </div>
+      <div class="mgmt-grid" id="svcs-grid">
+        <div class="mcard"><div class="skel" style="height:80px;"></div></div>
+        <div class="mcard"><div class="skel" style="height:80px;"></div></div>
+      </div>
+    </div>
+
+    <!-- ───── PROFESIONALES ───── -->
+    <div class="section" id="sec-professionals">
+      <div class="page-header">
+        <div><h1>Profesionales</h1><p>Tu equipo de trabajo</p></div>
+        <button class="btn btn-primary" onclick="openProModal()"><i class="ti ti-plus" style="font-size:14px;"></i>Nuevo profesional</button>
+      </div>
+      <div class="mgmt-grid" id="pros-grid">
+        <div class="mcard"><div class="skel" style="height:80px;"></div></div>
+        <div class="mcard"><div class="skel" style="height:80px;"></div></div>
+      </div>
+    </div>
+
+    <!-- ───── HORARIOS ───── -->
+    <div class="section" id="sec-schedules">
+      <div class="page-header"><div><h1>Horarios</h1><p>Disponibilidad semanal por profesional</p></div></div>
+      <div class="sched-grid" id="sched-grid"><div class="sched-card"><div class="skel" style="height:130px;"></div></div></div>
+    </div>
+
+    <!-- ───── BLOQUEOS ───── -->
+    <div class="section" id="sec-blocks">
+      <div class="page-header">
+        <div><h1>Bloqueos</h1><p>Feriados, vacaciones o días sin atención</p></div>
+        <button class="btn btn-primary" onclick="openBlockModal()"><i class="ti ti-plus" style="font-size:14px;"></i>Nuevo bloqueo</button>
+      </div>
+      <div id="blocks-list"></div>
+    </div>
+
+    <!-- ───── CLIENTES ───── -->
+    <div class="section" id="sec-clients">
+      <div class="page-header"><div><h1>Clientes</h1><p>Historial de personas que han reservado</p></div></div>
+      <div class="clients-grid" id="clients-grid">
+        <div class="ccard"><div class="skel" style="height:50px;width:100%;"></div></div>
+        <div class="ccard"><div class="skel" style="height:50px;width:100%;"></div></div>
+      </div>
+    </div>
+
+    <!-- ───── CONFIGURACIÓN ───── -->
+    <div class="section" id="sec-settings">
+      <div class="page-header"><div><h1>Configuración</h1><p>Cuenta y datos de tu negocio</p></div></div>
+      <div class="stlayout">
+        <div class="stnav">
+          <button class="stnav-item active" onclick="showSt('profile',this)"><i class="ti ti-user" style="font-size:15px;"></i>Mi perfil</button>
+          <button class="stnav-item" onclick="showSt('business',this)"><i class="ti ti-building-store" style="font-size:15px;"></i>Mi negocio</button>
+          <button class="stnav-item" onclick="showSt('security',this)"><i class="ti ti-lock" style="font-size:15px;"></i>Seguridad</button>
+          <div style="margin-top:auto;padding-top:14px;border-top:1px solid var(--border-default);">
+            <button class="stnav-item" onclick="logout()" style="color:var(--color-error);"><i class="ti ti-logout" style="font-size:15px;"></i>Cerrar sesión</button>
+          </div>
+        </div>
+        <div>
+          <div class="stpanel active" id="st-profile">
+            <div class="cc">
+              <div class="cc-header"><span class="cc-title">Información personal</span></div>
+              <div class="cc-body">
+                <div class="two-col">
+                  <div class="fgroup"><label class="flabel">Nombre</label><input type="text" id="st-fname" class="form-input" placeholder="Juan"/></div>
+                  <div class="fgroup"><label class="flabel">Apellido</label><input type="text" id="st-lname" class="form-input" placeholder="Pérez"/></div>
+                </div>
+                <div class="fgroup"><label class="flabel">Email</label><input type="email" id="st-email" class="form-input" disabled style="opacity:.6;"/></div>
+                <button class="btn btn-primary btn-sm" onclick="toast('Perfil actualizado','success')">Guardar cambios</button>
+              </div>
+            </div>
+          </div>
+          <div class="stpanel" id="st-business">
+            <div class="cc">
+              <div class="cc-header"><span class="cc-title">Datos del negocio</span></div>
+              <div class="cc-body">
+                <div class="fgroup"><label class="flabel">Nombre del negocio</label><input type="text" id="st-bizname" class="form-input"/></div>
+                <div class="two-col">
+                  <div class="fgroup"><label class="flabel">Teléfono</label><input type="tel" id="st-phone" class="form-input"/></div>
+                  <div class="fgroup"><label class="flabel">Dirección</label><input type="text" id="st-address" class="form-input"/></div>
+                </div>
+                <div class="fgroup">
+                  <label class="flabel">URL de reservas</label>
+                  <input type="text" id="st-slug" class="form-input" disabled style="opacity:.6;"/>
+                  <span style="font-size:11px;color:var(--text-muted);">El slug no puede modificarse</span>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="saveBiz()">Guardar cambios</button>
+              </div>
+            </div>
+          </div>
+          <div class="stpanel" id="st-security">
+            <div class="cc">
+              <div class="cc-header"><span class="cc-title">Cambiar contraseña</span></div>
+              <div class="cc-body">
+                <div class="fgroup"><label class="flabel">Nueva contraseña</label><input type="password" id="st-pw1" class="form-input" placeholder="Mínimo 8 caracteres"/></div>
+                <div class="fgroup"><label class="flabel">Confirmar contraseña</label><input type="password" id="st-pw2" class="form-input"/></div>
+                <button class="btn btn-primary btn-sm" onclick="chgPw()">Cambiar contraseña</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+</div><!-- /main-area -->
+</div><!-- /app-layout -->
+
+<!-- ════ MODAL SERVICIO ════ -->
+<div class="moverlay" id="m-service">
+  <div class="mbox">
+    <div class="mheader"><span class="mtitle" id="m-svc-title">Nuevo servicio</span><button class="mclose" onclick="closeM('service')">×</button></div>
+    <div class="mbody">
+      <input type="hidden" id="svc-id"/>
+      <div class="fgroup"><label class="flabel">Nombre *</label><input type="text" id="svc-name" class="form-input" placeholder="Corte de cabello"/></div>
+      <div class="fgroup"><label class="flabel">Descripción</label><input type="text" id="svc-desc" class="form-input" placeholder="Opcional"/></div>
+      <div class="two-col">
+        <div class="fgroup"><label class="flabel">Duración (min) *</label><input type="number" id="svc-dur" class="form-input" min="5" placeholder="30"/></div>
+        <div class="fgroup"><label class="flabel">Precio (CLP)</label><input type="number" id="svc-price" class="form-input" min="0" placeholder="8000"/></div>
+      </div>
+      <div class="alert alert-error" id="svc-err"><span id="svc-err-txt"></span></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeM('service')">Cancelar</button>
+      <button class="btn btn-primary" id="svc-btn" onclick="saveSvc()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL PROFESIONAL ════ -->
+<div class="moverlay" id="m-professional">
+  <div class="mbox">
+    <div class="mheader"><span class="mtitle" id="m-pro-title">Nuevo profesional</span><button class="mclose" onclick="closeM('professional')">×</button></div>
+    <div class="mbody">
+      <input type="hidden" id="pro-id"/>
+      <div class="fgroup"><label class="flabel">Nombre *</label><input type="text" id="pro-name" class="form-input"/></div>
+      <div class="two-col">
+        <div class="fgroup"><label class="flabel">Email</label><input type="email" id="pro-email" class="form-input"/></div>
+        <div class="fgroup"><label class="flabel">Teléfono</label><input type="tel" id="pro-phone" class="form-input"/></div>
+      </div>
+      <div class="fgroup"><label class="flabel">Bio</label><textarea id="pro-bio" class="form-input" rows="2" style="resize:vertical;"></textarea></div>
+      <div class="alert alert-error" id="pro-err"><span id="pro-err-txt"></span></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeM('professional')">Cancelar</button>
+      <button class="btn btn-primary" id="pro-btn" onclick="savePro()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL HORARIOS ════ -->
+<div class="moverlay" id="m-schedule">
+  <div class="mbox" style="max-width:430px;">
+    <div class="mheader"><span class="mtitle" id="m-sched-title">Horarios</span><button class="mclose" onclick="closeM('schedule')">×</button></div>
+    <div class="mbody" id="m-sched-body"></div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeM('schedule')">Cancelar</button>
+      <button class="btn btn-primary" id="sched-btn" onclick="saveSched()">Guardar horarios</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL BLOQUEO ════ -->
+<div class="moverlay" id="m-block">
+  <div class="mbox" style="max-width:400px;">
+    <div class="mheader"><span class="mtitle">Nuevo bloqueo</span><button class="mclose" onclick="closeM('block')">×</button></div>
+    <div class="mbody">
+      <div class="fgroup"><label class="flabel">Descripción *</label><input type="text" id="blk-name" class="form-input" placeholder="Feriado, Vacaciones..."/></div>
+      <div class="fgroup">
+        <label class="flabel">Profesional (vacío = todo el negocio)</label>
+        <select id="blk-pro" class="form-input"></select>
+      </div>
+      <div class="two-col">
+        <div class="fgroup"><label class="flabel">Desde *</label><input type="date" id="blk-start" class="form-input"/></div>
+        <div class="fgroup"><label class="flabel">Hasta *</label><input type="date" id="blk-end" class="form-input"/></div>
+      </div>
+      <div class="alert alert-error" id="blk-err"><span id="blk-err-txt"></span></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeM('block')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveBlk()">Crear bloqueo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SERVICIOS DEL PROFESIONAL -->
+<div class="moverlay" id="m-prosvcs">
+  <div class="mbox" style="max-width:420px;">
+    <div class="mheader">
+      <span class="mtitle" id="m-prosvcs-title">Servicios del profesional</span>
+      <button class="mclose" onclick="closeM('prosvcs')">×</button>
+    </div>
+    <div class="mbody">
+      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+        Selecciona los servicios que este profesional puede ofrecer.
+      </p>
+      <div id="prosvcs-checks" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div class="alert alert-error mt-4" id="prosvcs-err"><span id="prosvcs-err-txt"></span></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeM('prosvcs')">Cancelar</button>
+      <button class="btn btn-primary" id="prosvcs-btn" onclick="saveProSvcs()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast-el" role="alert"></div>
+
+<!-- ════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════ -->
+<script>
+'use strict';
+
+const API   = 'http://localhost:3000';
+const TOKEN = sessionStorage.getItem('agendly_token');
+const EMAIL = sessionStorage.getItem('agendly_email') ?? '';
+const SLUG  = new URLSearchParams(location.search).get('negocio')
+           ?? sessionStorage.getItem('agendly_slug');
+
+if (!TOKEN || !SLUG) location.href = 'login.html';
+
+// ── STATE ──────────────────────────────────────────────
+const S = {
+  biz: null, pros: [], svcs: [], appts: [], blocks: [],
+  apptFilter: 'all', apptSearch: '', curSection: 'dashboard',
+  schedProId: null,
+};
+let periodChart = null, toastTmr = null;
+
+// ── API ────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, {
+    ...opts,
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+TOKEN, ...(opts.headers??{}) },
+  });
+  if (r.status === 401) { sessionStorage.clear(); location.href = 'login.html'; }
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error ?? 'Error del servidor');
+  return j.data ?? j;
+}
+
+// ── TOAST ──────────────────────────────────────────────
+function toast(msg, type = '') {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg;
+  el.className   = `toast ${type} show`;
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── MODALS ─────────────────────────────────────────────
+const openM  = id => document.getElementById(`m-${id}`).classList.add('open');
+const closeM = id => document.getElementById(`m-${id}`).classList.remove('open');
+document.querySelectorAll('.moverlay').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }));
+
+// ── NAVIGATION ─────────────────────────────────────────
+const TITLES = { dashboard:'Dashboard', appointments:'Reservas', services:'Servicios', professionals:'Profesionales', schedules:'Horarios', blocks:'Bloqueos', clients:'Clientes', settings:'Configuración' };
+const LOADERS = { dashboard:loadDash, appointments:loadAppts, services:loadSvcs, professionals:loadPros, schedules:loadScheds, blocks:loadBlocks, clients:loadClients, settings:loadSettings };
+
+function nav(section, btn) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  btn?.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`sec-${section}`).classList.add('active');
+  document.getElementById('ttitle').textContent = TITLES[section] ?? section;
+  S.curSection = section;
+  document.getElementById('sidebar').classList.remove('open');
+  LOADERS[section]?.();
+}
+function refresh() { LOADERS[S.curSection]?.(); }
+
+// ── FORMAT ─────────────────────────────────────────────
+const $CLP  = n => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n??0);
+const $DATE = iso => new Date(iso).toLocaleString('es-CL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const $DS   = iso => new Date(iso).toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'});
+const INIT  = name => name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const SL    = {pending:'Pendiente',confirmed:'Confirmada',completed:'Completada',cancelled:'Cancelada'};
+const DAYS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const sbadge = s => `<span class="sbadge s-${s}">${SL[s]??s}</span>`;
+
+// ── INIT ───────────────────────────────────────────────
+async function init() {
+  try {
+    S.biz = await api(`/api/businesses/${SLUG}`);
+    document.getElementById('sb-biz').textContent  = S.biz.name;
+    document.getElementById('sb-plan').textContent = (S.biz.plan??'free').toUpperCase();
+    document.getElementById('booking-link').href   = `index.html?negocio=${SLUG}`;
+    document.title = `${S.biz.name} — AGENDLY`;
+  } catch {}
+
+  const email = EMAIL;
+  const parts = email.split('@')[0].split(/[._-]/);
+  const name  = parts.map(p => p.charAt(0).toUpperCase()+p.slice(1)).join(' ');
+  document.getElementById('sb-name').textContent  = name;
+  document.getElementById('sb-email').textContent = email;
+  document.getElementById('sb-av').textContent    = (email[0]??'?').toUpperCase();
+
+  const h = new Date().getHours();
+  const gr = h<12 ? 'Buenos días' : h<19 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('greeting').textContent = `${gr}, ${parts[0]??'bienvenido'}`;
+
+  loadDash();
+}
+
+// ════════════════════════════════════
+//  DASHBOARD
+// ════════════════════════════════════
+async function loadDash() {
+  try {
+    const [sum, top, period, topPros, hourly] = await Promise.all([
+      api(`/api/dashboard/${SLUG}/summary`),
+      api(`/api/dashboard/${SLUG}/top-services`),
+      api(`/api/dashboard/${SLUG}/by-period?period=day&limit=14`),
+      api(`/api/dashboard/${SLUG}/top-professionals`),
+      api(`/api/dashboard/${SLUG}/hourly-distribution`),
+    ]);
+    renderMetrics(sum);
+    renderTopSvcs(top);
+    renderPeriodChart(period);
+    renderTopPros(topPros);
+    renderHourly(hourly);
+    renderRecent(await api(`/api/businesses/${SLUG}/appointments`).then(d => d.slice(0,6)));
+    const p = sum.pending ?? 0;
+    const pb = document.getElementById('pbadge');
+    pb.textContent = p; pb.style.display = p > 0 ? 'inline-flex' : 'none';
+  } catch(e) { console.error(e); }
+}
+
+function renderMetrics(s) {
+  const clpShort = n => n >= 1000000 ? `$${(n/1000).toFixed(0)}k` : $CLP(n);
+  document.getElementById('d-metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-icon" style="background:var(--brand-primary-light);color:var(--brand-primary);"><i class="ti ti-calendar"></i></div>
+      <div class="metric-label">Total reservas</div>
+      <div class="metric-value c-default">${s.total ?? 0}</div>
+      <div class="metric-sub">Última semana: ${s.last_7_days ?? 0} · Último mes: ${s.last_30_days ?? 0}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:var(--color-warning-light);color:var(--color-warning);"><i class="ti ti-clock"></i></div>
+      <div class="metric-label">Pendientes</div>
+      <div class="metric-value c-yellow">${s.pending ?? 0}</div>
+      <div class="metric-sub">Confirmadas: ${s.confirmed ?? 0}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="ti ti-check"></i></div>
+      <div class="metric-label">Completadas</div>
+      <div class="metric-value c-green">${s.completed ?? 0}</div>
+      <div class="metric-sub">Tasa éxito: ${s.completion_rate ?? 0}% · Cancelación: ${s.cancellation_rate ?? 0}%</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="ti ti-currency-dollar"></i></div>
+      <div class="metric-label">Ingresos realizados</div>
+      <div class="metric-value c-green" style="font-size:18px;">${clpShort(s.estimated_revenue ?? 0)}</div>
+      <div class="metric-sub">Proyectado: ${clpShort(s.projected_revenue ?? 0)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:var(--color-info-light);color:var(--color-info);"><i class="ti ti-clock-hour-4"></i></div>
+      <div class="metric-label">Minutos de servicio</div>
+      <div class="metric-value c-blue">${s.total_minutes_served ?? 0}</div>
+      <div class="metric-sub">Promedio: ${s.avg_per_day ?? 0} reservas/día</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-icon" style="background:#f3e8ff;color:#7c3aed;"><i class="ti ti-trending-up"></i></div>
+      <div class="metric-label">Hora pico</div>
+      <div class="metric-value" style="color:#7c3aed;font-size:20px;">${s.peak_hour ?? '—'}</div>
+      <div class="metric-sub">Día más ocupado: ${s.peak_day ?? '—'}</div>
+    </div>`;
+}
+
+function renderTopSvcs(svcs) {
+  const el  = document.getElementById('d-topsvcs');
+  const max = svcs[0]?.count||1;
+  if (!svcs.length) { el.innerHTML='<p style="color:var(--text-muted);font-size:13px;">Sin datos aún</p>'; return; }
+  el.innerHTML = svcs.map((s,i) => `
+    <div class="top-svc-row">
+      <div class="top-svc-rank">${i+1}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${s.name}</div>
+        <div style="height:4px;background:var(--border-default);border-radius:2px;">
+          <div class="top-svc-bar" style="width:${Math.round(s.count/max*100)}%;"></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);flex-shrink:0;">${s.count}</div>
+    </div>`).join('');
+}
+
+function renderTopPros(pros) {
+  // Se muestra en una nueva tarjeta que agregamos al HTML del dashboard
+  const el = document.getElementById('d-toppros');
+  if (!el) return;
+  if (!pros.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">Sin datos aún</p>'; return; }
+  const maxRev = pros[0]?.revenue || 1;
+  el.innerHTML = pros.map((p, i) => `
+    <div class="top-svc-row">
+      <div class="top-svc-rank">${i+1}</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${p.name}</div>
+        <div style="font-size:11px;color:var(--text-muted);">${p.completed} completadas · ${$CLP(p.revenue)}</div>
+        <div style="height:4px;background:var(--border-default);border-radius:2px;margin-top:3px;">
+          <div class="top-svc-bar" style="width:${Math.round(p.revenue/maxRev*100)}%;background:#7c3aed;"></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary);flex-shrink:0;">${p.total}</div>
+    </div>`).join('');
+}
+
+function renderHourly(hours) {
+  const el = document.getElementById('chart-hourly');
+  if (!el) return;
+  const max = Math.max(...hours.map(h => h.count), 1);
+  el.innerHTML = hours.map(h => `
+    <div style="display:flex;align-items:flex-end;flex-direction:column;gap:2px;align-items:center;">
+      <div style="font-size:10px;color:var(--text-muted);font-weight:600;">${h.count||''}</div>
+      <div style="width:22px;background:var(--brand-primary);border-radius:3px 3px 0 0;opacity:${0.3+0.7*(h.count/max)};height:${Math.max(4,Math.round(h.count/max*80))}px;"></div>
+      <div style="font-size:10px;color:var(--text-muted);">${h.label.slice(0,2)}</div>
+    </div>`).join('');
+}
+
+function renderPeriodChart(data) {
+  const ctx = document.getElementById('chart-period').getContext('2d');
+  if (periodChart) periodChart.destroy();
+  periodChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: data.map(d=>d.period), datasets:[{ label:'Reservas', data:data.map(d=>d.total), backgroundColor:'rgba(79,70,229,0.7)', borderRadius:5, borderSkipped:false }] },
+    options: { responsive:true, plugins:{legend:{display:false}}, scales:{ y:{beginAtZero:true,ticks:{precision:0,color:'#9ca3af'},grid:{color:'rgba(0,0,0,0.04)'}}, x:{ticks:{color:'#9ca3af',maxRotation:45},grid:{display:false}} } },
+  });
+}
+
+async function chPeriod(p, btn) {
+  document.querySelectorAll('#sec-dashboard .fchip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const data = await api(`/api/dashboard/${SLUG}/by-period?period=${p}&limit=14`);
+  renderPeriodChart(data);
+}
+
+function renderRecent(appts) {
+  const tb = document.getElementById('d-recent');
+  if (!appts.length) { tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Sin reservas aún</td></tr>'; return; }
+  tb.innerHTML = appts.map(a=>`
+    <tr>
+      <td><div style="font-weight:600;">${a.client_name}</div><div style="font-size:11px;color:var(--text-muted);">${a.client_phone}</div></td>
+      <td>${a.services?.name??'—'}</td>
+      <td style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
+      <td>${sbadge(a.status)}</td>
+    </tr>`).join('');
+}
+
+// ════════════════════════════════════
+//  RESERVAS
+// ════════════════════════════════════
+async function loadAppts() {
+  try { S.appts = await api(`/api/businesses/${SLUG}/appointments`); applyApptF(); }
+  catch(e) { document.getElementById('appts-body').innerHTML=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-error);">${e.message}</td></tr>`; }
+}
+
+function fAppt(f, btn) {
+  document.querySelectorAll('#sec-appointments .fchip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); S.apptFilter=f; applyApptF();
+}
+
+let srchTmr;
+function srchAppt(v) { clearTimeout(srchTmr); srchTmr=setTimeout(()=>{ S.apptSearch=v.trim().toLowerCase(); applyApptF(); },250); }
+
+function applyApptF() {
+  let d = S.appts;
+  if (S.apptFilter!=='all') d=d.filter(a=>a.status===S.apptFilter);
+  if (S.apptSearch) d=d.filter(a=>a.client_name.toLowerCase().includes(S.apptSearch)||(a.client_phone??'').includes(S.apptSearch));
+  renderAppts(d);
+}
+
+function renderAppts(appts) {
+  const tb = document.getElementById('appts-body');
+  if (!appts.length) { tb.innerHTML=`<tr><td colspan="6"><div class="empty"><i class="ti ti-calendar-x"></i><h3>No hay reservas</h3><p>Sin resultados para este filtro</p></div></td></tr>`; return; }
+  tb.innerHTML = appts.map(a => {
+    const cc=a.status==='pending', ck=a.status==='confirmed', ca=a.status==='pending'||a.status==='confirmed';
+    return `<tr>
+      <td><div style="font-weight:600;">${a.client_name}</div><div style="font-size:11px;color:var(--text-muted);">${a.client_phone}</div></td>
+      <td>${a.services?.name??'—'}</td><td>${a.professionals?.name??'—'}</td>
+      <td style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
+      <td>${sbadge(a.status)}</td>
+      <td><div class="tactions">
+        <button class="tbtn tb-confirm"  onclick="chStatus('${a.id}','confirmed')"  ${!cc?'disabled':''}>Confirmar</button>
+        <button class="tbtn tb-complete" onclick="chStatus('${a.id}','completed')"  ${!ck?'disabled':''}>Completar</button>
+        <button class="tbtn tb-cancel"   onclick="chStatus('${a.id}','cancelled')"  ${!ca?'disabled':''}>Cancelar</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+async function chStatus(id, ns) {
+  const i = S.appts.findIndex(a=>a.id===id); if (i<0) return;
+  const prev = S.appts[i].status;
+  S.appts[i].status = ns; applyApptF();
+  try {
+    await api(`/api/appointments/${id}/status`,{ method:'PATCH', body:JSON.stringify({status:ns,businessSlug:SLUG}) });
+    toast(`Reserva marcada como ${SL[ns].toLowerCase()}`, 'success');
+  } catch(e) { S.appts[i].status=prev; applyApptF(); toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════
+//  SERVICIOS
+// ════════════════════════════════════
+async function loadSvcs() {
+  try { S.svcs = await api(`/api/admin/${SLUG}/services`); renderSvcs(S.svcs); } catch {}
+}
+
+function renderSvcs(svcs) {
+  const g = document.getElementById('svcs-grid');
+  if (!svcs.length) { g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><i class="ti ti-tools"></i><h3>Sin servicios</h3><p>Crea tu primer servicio</p></div>`; return; }
+  g.innerHTML = svcs.map(s=>`
+    <div class="mcard">
+      <div class="mcard-top">
+        <div class="mcard-name">${s.name}</div>
+        <span class="badge ${s.is_active?'badge-success':'badge-neutral'}">${s.is_active?'Activo':'Inactivo'}</span>
+      </div>
+      ${s.description?`<div style="font-size:12px;color:var(--text-secondary);">${s.description}</div>`:''}
+      <div class="mcard-meta">
+        <span><i class="ti ti-clock" style="font-size:13px;"></i>${s.duration_min} min</span>
+        <span><i class="ti ti-currency-dollar" style="font-size:13px;"></i>${$CLP(s.price)}</span>
+      </div>
+      <div class="mcard-actions">
+        <button class="btn btn-sm btn-secondary" onclick='editSvc(${JSON.stringify(s)})'><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+        <button class="btn btn-sm ${s.is_active?'btn-danger':'btn-secondary'}" onclick="toggleSvc('${s.id}',${!s.is_active})">${s.is_active?'Desactivar':'Activar'}</button>
+      </div>
+    </div>`).join('');
+}
+
+function openSvcModal() {
+  ['svc-id','svc-name','svc-desc','svc-dur','svc-price'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('svc-err').classList.remove('visible');
+  document.getElementById('m-svc-title').textContent='Nuevo servicio';
+  openM('service');
+}
+function editSvc(s) {
+  document.getElementById('svc-id').value    = s.id;
+  document.getElementById('svc-name').value  = s.name;
+  document.getElementById('svc-desc').value  = s.description??'';
+  document.getElementById('svc-dur').value   = s.duration_min;
+  document.getElementById('svc-price').value = s.price;
+  document.getElementById('svc-err').classList.remove('visible');
+  document.getElementById('m-svc-title').textContent='Editar servicio';
+  openM('service');
+}
+
+async function saveSvc() {
+  const id   = document.getElementById('svc-id').value;
+  const name = document.getElementById('svc-name').value.trim();
+  const dur  = parseInt(document.getElementById('svc-dur').value);
+  const price= parseFloat(document.getElementById('svc-price').value)||0;
+  const desc = document.getElementById('svc-desc').value.trim();
+  const eEl  = document.getElementById('svc-err');
+  const eTx  = document.getElementById('svc-err-txt');
+  if (!name)   { eTx.textContent='El nombre es requerido'; eEl.classList.add('visible'); return; }
+  if (dur < 5) { eTx.textContent='Mínimo 5 minutos';       eEl.classList.add('visible'); return; }
+  eEl.classList.remove('visible');
+  const btn=document.getElementById('svc-btn'); btn.disabled=true; btn.textContent='Guardando...';
+  try {
+    await api(id?`/api/admin/${SLUG}/services/${id}`:`/api/admin/${SLUG}/services`,
+      { method:id?'PATCH':'POST', body:JSON.stringify({name,description:desc,duration_min:dur,price}) });
+    closeM('service'); toast('Servicio guardado','success'); loadSvcs();
+  } catch(e) { eTx.textContent=e.message; eEl.classList.add('visible'); }
+  finally { btn.disabled=false; btn.textContent='Guardar'; }
+}
+
+async function toggleSvc(id, state) {
+  try { await api(`/api/admin/${SLUG}/services/${id}`,{method:'PATCH',body:JSON.stringify({is_active:state})}); toast(`Servicio ${state?'activado':'desactivado'}`,'success'); loadSvcs(); }
+  catch(e){ toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════
+//  PROFESIONALES
+// ════════════════════════════════════
+async function loadPros() {
+  try { S.pros = await api(`/api/admin/${SLUG}/professionals`); renderPros(S.pros); } catch {}
+}
+
+function renderPros(pros) {
+  const g=document.getElementById('pros-grid');
+  if (!pros.length) { g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><i class="ti ti-users"></i><h3>Sin profesionales</h3><p>Agrega tu equipo</p></div>`; return; }
+  g.innerHTML = pros.map(p=>`
+    <div class="mcard">
+      <div class="mcard-top">
+        <div style="display:flex;align-items:center;gap:9px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--brand-primary-light);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">${INIT(p.name)}</div>
+          <div><div class="mcard-name">${p.name}</div>${p.bio?`<div style="font-size:11px;color:var(--text-muted);">${p.bio}</div>`:''}</div>
+        </div>
+        <span class="badge ${p.is_active?'badge-success':'badge-neutral'}">${p.is_active?'Activo':'Inactivo'}</span>
+      </div>
+      <div class="mcard-meta">
+        ${p.email?`<span><i class="ti ti-mail" style="font-size:12px;"></i>${p.email}</span>`:''}
+        ${p.phone?`<span><i class="ti ti-phone" style="font-size:12px;"></i>${p.phone}</span>`:''}
+      </div>
+<div class="mcard-actions" style="flex-wrap:wrap;gap:5px;">
+  <button class="btn btn-sm btn-secondary" onclick='editPro(${JSON.stringify(p)})'><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+  <button class="btn btn-sm btn-secondary" onclick="openProSvcsModal('${p.id}','${p.name}')"><i class="ti ti-tools" style="font-size:12px;"></i>Servicios</button>
+  <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}','${p.name}')"><i class="ti ti-clock" style="font-size:12px;"></i>Horarios</button>
+  <button class="btn btn-sm ${p.is_active?'btn-danger':'btn-secondary'}" onclick="togglePro('${p.id}',${!p.is_active})">${p.is_active?'Desactivar':'Activar'}</button>
+</div>
+    </div>`).join('');
+}
+
+function openProModal() {
+  ['pro-id','pro-name','pro-email','pro-phone','pro-bio'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pro-err').classList.remove('visible');
+  document.getElementById('m-pro-title').textContent='Nuevo profesional';
+  openM('professional');
+}
+function editPro(p) {
+  document.getElementById('pro-id').value    = p.id;
+  document.getElementById('pro-name').value  = p.name;
+  document.getElementById('pro-email').value = p.email??'';
+  document.getElementById('pro-phone').value = p.phone??'';
+  document.getElementById('pro-bio').value   = p.bio??'';
+  document.getElementById('pro-err').classList.remove('visible');
+  document.getElementById('m-pro-title').textContent='Editar profesional';
+  openM('professional');
+}
+
+async function savePro() {
+  const id   = document.getElementById('pro-id').value;
+  const name = document.getElementById('pro-name').value.trim();
+  const eEl  = document.getElementById('pro-err');
+  const eTx  = document.getElementById('pro-err-txt');
+  if (!name) { eTx.textContent='El nombre es requerido'; eEl.classList.add('visible'); return; }
+  eEl.classList.remove('visible');
+  const btn=document.getElementById('pro-btn'); btn.disabled=true; btn.textContent='Guardando...';
+  try {
+    await api(id?`/api/admin/${SLUG}/professionals/${id}`:`/api/admin/${SLUG}/professionals`,
+      { method:id?'PATCH':'POST', body:JSON.stringify({ name, email:document.getElementById('pro-email').value.trim(), phone:document.getElementById('pro-phone').value.trim(), bio:document.getElementById('pro-bio').value.trim() }) });
+    closeM('professional'); toast('Profesional guardado','success'); loadPros();
+  } catch(e) { eTx.textContent=e.message; eEl.classList.add('visible'); }
+  finally { btn.disabled=false; btn.textContent='Guardar'; }
+}
+
+async function togglePro(id, state) {
+  try { await api(`/api/admin/${SLUG}/professionals/${id}`,{method:'PATCH',body:JSON.stringify({is_active:state})}); toast(`Profesional ${state?'activado':'desactivado'}`,'success'); loadPros(); }
+  catch(e){ toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════
+//  HORARIOS
+// ════════════════════════════════════
+async function loadScheds() {
+  try {
+    const pros = await api(`/api/admin/${SLUG}/professionals`);
+    S.pros = pros;
+    const g = document.getElementById('sched-grid');
+    const actives = pros.filter(p=>p.is_active);
+    if (!actives.length) { g.innerHTML=`<div class="empty"><i class="ti ti-clock"></i><h3>Sin profesionales activos</h3></div>`; return; }
+    const all = await Promise.all(actives.map(p=>api(`/api/admin/${SLUG}/schedules/${p.id}`).then(s=>({p,s}))));
+    g.innerHTML = all.map(({p,s})=>{
+      const m={}; s.forEach(x=>m[x.day_of_week]=x);
+      return `<div class="sched-card">
+        <div class="sched-head">
+          <div class="sched-avatar">${INIT(p.name)}</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:13px;">${p.name}</div><div style="font-size:11px;color:var(--text-secondary);">${s.length} días activos</div></div>
+          <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}','${p.name}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+        </div>
+        <div class="sched-days">
+          ${[1,2,3,4,5,6,0].map(d=>`
+            <div class="sched-day">
+              <span class="sched-day-name">${DAYS[d]}</span>
+              ${m[d]?`<span style="color:var(--text-secondary);">${m[d].start_time.slice(0,5)} – ${m[d].end_time.slice(0,5)}</span>`
+                    :`<span class="sched-day-off">No trabaja</span>`}
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } catch {}
+}
+
+async function openSchedModal(proId, proName) {
+  S.schedProId = proId;
+  document.getElementById('m-sched-title').textContent = `Horarios — ${proName}`;
+  let ex = {};
+  try { const d = await api(`/api/admin/${SLUG}/schedules/${proId}`); d.forEach(s=>ex[s.day_of_week]=s); } catch {}
+  document.getElementById('m-sched-body').innerHTML = `
+    <p style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Activa los días y define el horario.</p>
+    ${[1,2,3,4,5,6,0].map(d=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border-default);" id="sr-${d}">
+        <label style="display:flex;align-items:center;gap:6px;width:105px;cursor:pointer;">
+          <input type="checkbox" ${ex[d]?'checked':''} onchange="toggleSR(${d},this.checked)" style="accent-color:var(--brand-primary);width:14px;height:14px;"/>
+          <span style="font-size:13px;font-weight:600;">${DAYS[d]}</span>
+        </label>
+        <div id="si-${d}" style="display:${ex[d]?'flex':'none'};align-items:center;gap:6px;">
+          <input type="time" id="ss-${d}" value="${ex[d]?.start_time?.slice(0,5)??'09:00'}" class="form-input" style="width:100px;padding:5px 9px;font-size:12px;"/>
+          <span style="color:var(--text-muted);font-size:12px;">a</span>
+          <input type="time" id="se-${d}" value="${ex[d]?.end_time?.slice(0,5)??'18:00'}"   class="form-input" style="width:100px;padding:5px 9px;font-size:12px;"/>
+        </div>
+      </div>`).join('')}`;
+  openM('schedule');
+}
+
+function toggleSR(d, v) { document.getElementById(`si-${d}`).style.display=v?'flex':'none'; }
+
+async function saveSched() {
+  const scheds=[];
+  for (let d=0;d<=6;d++) {
+    const cb=document.querySelector(`#sr-${d} input[type=checkbox]`);
+    if (!cb?.checked) continue;
+    scheds.push({ day_of_week:d, start_time:document.getElementById(`ss-${d}`)?.value, end_time:document.getElementById(`se-${d}`)?.value });
+  }
+  const btn=document.getElementById('sched-btn'); btn.disabled=true; btn.textContent='Guardando...';
+  try {
+    await api(`/api/admin/${SLUG}/schedules/${S.schedProId}`,{method:'PUT',body:JSON.stringify({schedules:scheds})});
+    closeM('schedule'); toast('Horarios guardados','success');
+    if (S.curSection==='schedules') loadScheds();
+  } catch(e){ toast(e.message,'error'); }
+  finally { btn.disabled=false; btn.textContent='Guardar horarios'; }
+}
+
+// ════════════════════════════════════
+//  BLOQUEOS
+// ════════════════════════════════════
+async function loadBlocks() {
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('blk-start').min = today;
+  document.getElementById('blk-end').min   = today;
+  if (!S.pros.length) try { S.pros=await api(`/api/admin/${SLUG}/professionals`); } catch {}
+  document.getElementById('blk-pro').innerHTML = '<option value="">Todo el negocio</option>' +
+    S.pros.filter(p=>p.is_active).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  try { S.blocks=await api(`/api/admin/${SLUG}/blocks`); renderBlocks(S.blocks); }
+  catch { renderBlocks([]); }
+}
+
+function renderBlocks(blocks) {
+  const c=document.getElementById('blocks-list');
+  if (!blocks.length) { c.innerHTML=`<div class="empty"><i class="ti ti-calendar-off"></i><h3>Sin bloqueos activos</h3><p>Agrega días sin atención</p></div>`; return; }
+  c.innerHTML = blocks.map(b=>`
+    <div class="bitem">
+      <div class="bicon"><i class="ti ti-calendar-off"></i></div>
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:14px;">${b.name}</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${$DS(b.start_date)} → ${$DS(b.end_date)}${b.professional_id?' · Un profesional':' · Todo el negocio'}</div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="delBlock('${b.id}')"><i class="ti ti-trash" style="font-size:13px;"></i></button>
+    </div>`).join('');
+}
+
+function openBlockModal() { document.getElementById('blk-name').value=''; document.getElementById('blk-start').value=''; document.getElementById('blk-end').value=''; document.getElementById('blk-err').classList.remove('visible'); openM('block'); }
+
+async function saveBlk() {
+  const name=document.getElementById('blk-name').value.trim();
+  const s=document.getElementById('blk-start').value;
+  const e=document.getElementById('blk-end').value;
+  const pro=document.getElementById('blk-pro').value||null;
+  const eEl=document.getElementById('blk-err'); const eTx=document.getElementById('blk-err-txt');
+  if (!name||!s||!e) { eTx.textContent='Completa todos los campos'; eEl.classList.add('visible'); return; }
+  if (s>e) { eTx.textContent='La fecha inicio debe ser antes que el fin'; eEl.classList.add('visible'); return; }
+  eEl.classList.remove('visible');
+  try {
+    await api(`/api/admin/${SLUG}/blocks`,{method:'POST',body:JSON.stringify({name,start_date:s,end_date:e,professional_id:pro})});
+    closeM('block'); toast('Bloqueo creado','success'); loadBlocks();
+  } catch(err){ eTx.textContent=err.message; eEl.classList.add('visible'); }
+}
+
+async function delBlock(id) {
+  if (!confirm('¿Eliminar este bloqueo?')) return;
+  try { await api(`/api/admin/${SLUG}/blocks/${id}`,{method:'DELETE'}); toast('Bloqueo eliminado','success'); loadBlocks(); }
+  catch(e){ toast(e.message,'error'); }
+}
+
+// ════════════════════════════════════
+//  CLIENTES
+// ════════════════════════════════════
+async function loadClients() {
+  try {
+    const appts = await api(`/api/businesses/${SLUG}/appointments`);
+    const map={};
+    appts.forEach(a=>{ if(!map[a.client_phone]){map[a.client_phone]={name:a.client_name,phone:a.client_phone,email:a.client_email,count:0,last:a.scheduled_at};} map[a.client_phone].count++; if(a.scheduled_at>map[a.client_phone].last) map[a.client_phone].last=a.scheduled_at; });
+    const cls=Object.values(map).sort((a,b)=>b.count-a.count);
+    const g=document.getElementById('clients-grid');
+    if (!cls.length) { g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><i class="ti ti-users-group"></i><h3>Sin clientes aún</h3><p>Aparecerán cuando lleguen reservas</p></div>`; return; }
+    g.innerHTML = cls.map(c=>`
+      <div class="ccard">
+        <div class="cavatar">${INIT(c.name)}</div>
+        <div>
+          <div style="font-weight:600;font-size:13px;">${c.name}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:1px;">${c.phone}${c.email?` · ${c.email}`:''}</div>
+          <div style="margin-top:4px;"><span class="badge badge-primary">${c.count} reserva${c.count!==1?'s':''}</span></div>
+        </div>
+      </div>`).join('');
+  } catch {}
+}
+
+// ── SERVICIOS POR PROFESIONAL ──────────────────────────
+let proSvcsEditing = null;
+
+async function openProSvcsModal(proId, proName) {
+  proSvcsEditing = proId;
+  document.getElementById('m-prosvcs-title').textContent = `Servicios — ${proName}`;
+  document.getElementById('prosvcs-err').classList.remove('visible');
+
+  // Cargar todos los servicios y los asignados al pro
+  const [allSvcs, assignedSvcs] = await Promise.all([
+    api(`/api/admin/${SLUG}/services`),
+    api(`/api/admin/${SLUG}/professionals/${proId}/services`).catch(() => []),
+  ]);
+
+  const assignedIds = new Set(assignedSvcs.map(s => s.id));
+  const activeSvcs  = allSvcs.filter(s => s.is_active);
+
+  if (!activeSvcs.length) {
+    document.getElementById('prosvcs-checks').innerHTML =
+      '<p style="color:var(--text-muted);font-size:13px;">No hay servicios activos. Crea servicios primero.</p>';
+    openM('prosvcs');
+    return;
+  }
+
+  document.getElementById('prosvcs-checks').innerHTML = activeSvcs.map(s => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border-default);border-radius:var(--radius-md);cursor:pointer;transition:border-color 0.15s;"
+           onmouseenter="this.style.borderColor='var(--border-strong)'"
+           onmouseleave="this.style.borderColor=document.getElementById('psc-${s.id}').checked?'var(--brand-primary)':'var(--border-default)'">
+      <input type="checkbox" id="psc-${s.id}" value="${s.id}"
+             ${assignedIds.has(s.id) ? 'checked' : ''}
+             style="accent-color:var(--brand-primary);width:15px;height:15px;flex-shrink:0;"
+             onchange="this.closest('label').style.borderColor=this.checked?'var(--brand-primary)':'var(--border-default)'"/>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;">${s.name}</div>
+        <div style="font-size:11px;color:var(--text-secondary);">${s.duration_min} min · ${$CLP(s.price)}</div>
+      </div>
+    </label>`).join('');
+
+  // Inicializar borde de checks ya marcados
+  activeSvcs.forEach(s => {
+    const el = document.getElementById(`psc-${s.id}`);
+    if (el?.checked) el.closest('label').style.borderColor = 'var(--brand-primary)';
+  });
+
+  openM('prosvcs');
+}
+
+async function saveProSvcs() {
+  const checked   = Array.from(document.querySelectorAll('#prosvcs-checks input:checked')).map(el => el.value);
+  const eEl       = document.getElementById('prosvcs-err');
+  const eTx       = document.getElementById('prosvcs-err-txt');
+  const btn       = document.getElementById('prosvcs-btn');
+  eEl.classList.remove('visible');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    await api(`/api/admin/${SLUG}/professionals/${proSvcsEditing}/services`, {
+      method: 'PUT',
+      body:   JSON.stringify({ serviceIds: checked }),
+    });
+    closeM('prosvcs');
+    toast('Servicios asignados correctamente', 'success');
+  } catch(e) {
+    eTx.textContent = e.message;
+    eEl.classList.add('visible');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Guardar';
+  }
+}
+
+// ════════════════════════════════════
+//  CONFIGURACIÓN
+// ════════════════════════════════════
+function loadSettings() {
+  document.getElementById('st-email').value = EMAIL;
+  if (S.biz) {
+    document.getElementById('st-bizname').value = S.biz.name??'';
+    document.getElementById('st-phone').value   = S.biz.phone??'';
+    document.getElementById('st-address').value = S.biz.address??'';
+    document.getElementById('st-slug').value    = S.biz.slug??'';
+  }
+}
+function showSt(panel, btn) {
+  document.querySelectorAll('.stnav-item').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  document.querySelectorAll('.stpanel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`st-${panel}`).classList.add('active');
+}
+async function saveBiz() {
+  const name=document.getElementById('st-bizname').value.trim();
+  if (!name) { toast('El nombre es requerido','error'); return; }
+  try {
+    await api(`/api/admin/${SLUG}/business`,{method:'PATCH',body:JSON.stringify({name,phone:document.getElementById('st-phone').value.trim(),address:document.getElementById('st-address').value.trim()})});
+    if (S.biz) { S.biz.name=name; document.getElementById('sb-biz').textContent=name; }
+    toast('Negocio actualizado','success');
+  } catch(e){ toast(e.message,'error'); }
+}
+function chgPw() {
+  const p1=document.getElementById('st-pw1').value, p2=document.getElementById('st-pw2').value;
+  if (!p1||p1.length<8) { toast('Mínimo 8 caracteres','error'); return; }
+  if (p1!==p2) { toast('Las contraseñas no coinciden','error'); return; }
+  toast('Contraseña actualizada','success');
+  document.getElementById('st-pw1').value=''; document.getElementById('st-pw2').value='';
+}
+function logout() { if (!confirm('¿Cerrar sesión?')) return; sessionStorage.clear(); location.href='login.html'; }
+
+// ── ARRANCAR ──────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

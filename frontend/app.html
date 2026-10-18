@@ -95,6 +95,8 @@
     .wbtn i { font-size: 16px; }
     .wbtn-light { background: #fff; color: var(--brand-primary); }
     .wbtn-light:hover { background: var(--brand-primary-light); }
+    .wbtn-ghost { background: rgba(255,255,255,0.14); color: #fff; border-color: rgba(255,255,255,0.4); }
+    .wbtn-ghost:hover { background: rgba(255,255,255,0.24); }
 
     /* METRICS */
     .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
@@ -555,7 +557,8 @@
       <p class="welcome-sub" id="wl-sub">Preparando tu resumen…</p>
     </div>
     <div class="welcome-actions">
-      <button type="button" class="wbtn wbtn-light" onclick="nav('calendar', document.querySelector('[data-s=calendar]'))"><i class="ti ti-calendar-week"></i>Ver calendario</button>
+      <button type="button" class="wbtn wbtn-light" onclick="nav('appointments', document.querySelector('[data-s=appointments]'))"><i class="ti ti-calendar"></i>Ver reservas</button>
+      <button type="button" class="wbtn wbtn-ghost" onclick="nav('calendar', document.querySelector('[data-s=calendar]'))"><i class="ti ti-calendar-week"></i>Ver calendario</button>
     </div>
   </section>
   <div class="metrics-grid" id="d-metrics">

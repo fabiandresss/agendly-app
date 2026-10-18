@@ -1,27 +1,27 @@
-/* Panel izquierdo de las pantallas de acceso (login, registro, recuperar contraseña).
-   Mismo lenguaje visual que la bienvenida del panel: degradado índigo, círculos suaves e iconos en baldosas. */
-.brand-panel {
-  background: linear-gradient(155deg, var(--brand-primary) 0%, #6a61ee 100%);
-  display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
-  padding: 44px 52px; position: relative; overflow: hidden; color: #fff;
-}
-.brand-panel::before { content: ''; position: absolute; width: 440px; height: 440px; border-radius: 50%; background: rgba(255,255,255,0.07); top: -150px; right: -140px; }
-.brand-panel::after  { content: ''; position: absolute; width: 240px; height: 240px; border-radius: 50%; background: rgba(255,255,255,0.06); bottom: -70px; left: -60px; }
-.brand-logo, .brand-content, .brand-features { position: relative; z-index: 1; }
-.brand-logo { display: inline-flex; align-self: flex-start; text-decoration: none; }
+/* Pantallas de acceso (login, registro, recuperar contraseña): mismo lenguaje que el onboarding —
+   barra superior con el logo y una tarjeta blanca centrada sobre el fondo claro.
+   Se carga al final del <head> para ordenar el layout por encima de los estilos propios de cada página. */
+body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--surface-page); }
 
-.brand-content h1 { font-family: var(--font-display); font-size: 36px; font-weight: 700; line-height: 1.15; color: #fff; margin: 0 0 14px; }
-.brand-content p  { font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.86); max-width: 360px; margin: 0; }
-
-.brand-features { display: flex; flex-direction: column; gap: 10px; }
-.brand-feature {
-  display: flex; align-items: center; gap: 12px; padding: 10px 14px; max-width: 400px;
-  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.16); border-radius: var(--radius-lg);
-  font-size: 13.5px; font-weight: 500; color: #fff; backdrop-filter: blur(4px);
+.ob-topbar {
+  position: sticky; top: 0; z-index: 50; height: 56px; padding: 0 24px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--surface-card); border-bottom: 1px solid var(--border-default);
 }
-.brand-feature i {
-  width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.18); border-radius: 9px; font-size: 17px;
+.ob-logo { display: flex; align-items: center; text-decoration: none; }
+.ob-top-link { font-size: 13px; font-weight: 600; color: var(--brand-primary); text-decoration: none; }
+.ob-top-link:hover { text-decoration: underline; }
+
+.form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 36px 16px 56px; overflow: visible; }
+.form-box, .form-container {
+  width: 100%; max-width: 440px;
+  background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 20px;
+  padding: 32px 34px 30px;
+  box-shadow: 0 1px 2px rgba(30,27,75,0.04), 0 10px 32px rgba(30,27,75,0.05);
 }
 
-@media (max-width: 768px) { .brand-panel { display: none; } }
+@media (max-width: 520px) {
+  .ob-topbar { padding: 0 16px; }
+  .form-panel { padding: 20px 12px 40px; align-items: flex-start; }
+  .form-box, .form-container { padding: 24px 20px 22px; border-radius: 18px; }
+}

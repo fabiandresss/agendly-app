@@ -123,9 +123,9 @@
     .mcard-name { font-weight: 700; font-size: 14px; }
     .mcard-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; }
     .mcard-meta span { display: flex; align-items: center; gap: 3px; }
-    .mcard-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .mcard-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
     /* Todos los botones de acción: mismo alto, mismo ícono, mismo espaciado */
-    .mcard-actions .btn { height: 32px; padding: 0 12px; gap: 6px; line-height: 1; }
+    .mcard-actions .btn { width: 100%; height: 32px; padding: 0 12px; gap: 6px; line-height: 1; }
     .mcard-actions .btn i { font-size: 14px; line-height: 1; }
 
     /* SCHEDULE */

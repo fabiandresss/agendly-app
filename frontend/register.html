@@ -5,85 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crear cuenta — AGENDLY</title>
   <link rel="stylesheet" href="styles/design-system.css?v=0c902f78"/>
+  <link rel="stylesheet" href="styles/auth.css?v=f8cb2d65"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
   <style>
     body {
       min-height: 100vh;
       display: grid;
       grid-template-columns: 1fr 1fr;
-    }
-
-    /* Panel izquierdo — branding */
-    .brand-panel {
-      background: var(--brand-primary);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 48px;
-      position: relative;
-      overflow: hidden;
-    }
-    .brand-panel::before {
-      content: '';
-      position: absolute;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-      top: -100px; right: -150px;
-    }
-    .brand-panel::after {
-      content: '';
-      position: absolute;
-      width: 300px; height: 300px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-      bottom: 60px; left: -80px;
-    }
-    .brand-logo {
-      font-family: var(--font-display);
-      font-size: 28px;
-      font-weight: 700;
-      color: white;
-      text-decoration: none;
-      position: relative;
-      z-index: 1;
-    }
-    .brand-content {
-      position: relative;
-      z-index: 1;
-    }
-    .brand-content h1 {
-      font-family: var(--font-display);
-      font-size: 36px;
-      font-weight: 700;
-      color: white;
-      line-height: 1.2;
-      margin-bottom: 16px;
-    }
-    .brand-content p {
-      color: rgba(255,255,255,0.75);
-      font-size: 16px;
-      line-height: 1.6;
-      max-width: 360px;
-    }
-    .brand-features {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .brand-feature {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: rgba(255,255,255,0.85);
-      font-size: 14px;
-    }
-    .brand-feature-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #a5b4fc;
-      flex-shrink: 0;
     }
 
     /* Panel derecho — formulario */
@@ -211,22 +139,10 @@
     </div>
 
     <div class="brand-features">
-      <div class="brand-feature">
-        <div class="brand-feature-dot"></div>
-        Reservas automáticas 24/7
-      </div>
-      <div class="brand-feature">
-        <div class="brand-feature-dot"></div>
-        Confirmaciones por WhatsApp y email
-      </div>
-      <div class="brand-feature">
-        <div class="brand-feature-dot"></div>
-        Dashboard con métricas reales
-      </div>
-      <div class="brand-feature">
-        <div class="brand-feature-dot"></div>
-        Sin tarjeta de crédito para empezar
-      </div>
+      <div class="brand-feature"><i class="ti ti-calendar-check"></i>Reservas automáticas 24/7</div>
+      <div class="brand-feature"><i class="ti ti-brand-whatsapp"></i>Confirmaciones por WhatsApp y email</div>
+      <div class="brand-feature"><i class="ti ti-chart-bar"></i>Dashboard con métricas reales</div>
+      <div class="brand-feature"><i class="ti ti-credit-card-off"></i>Sin tarjeta de crédito para empezar</div>
     </div>
   </div>
 

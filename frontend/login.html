@@ -6,89 +6,12 @@
   <title>Iniciar sesión — AGENDLY</title>
   <link rel="stylesheet" href="styles/design-system.css?v=0c902f78"/>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+  <link rel="stylesheet" href="styles/auth.css?v=f8cb2d65"/>
   <style>
     body {
       min-height: 100vh;
       display: grid;
       grid-template-columns: 1fr 1fr;
-    }
-
-    /* Panel izquierdo */
-    .brand-panel {
-      background: var(--brand-primary);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 48px;
-      position: relative;
-      overflow: hidden;
-    }
-    .brand-panel::before {
-      content: '';
-      position: absolute;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-      top: -120px; right: -160px;
-    }
-    .brand-panel::after {
-      content: '';
-      position: absolute;
-      width: 280px; height: 280px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-      bottom: 60px; left: -80px;
-    }
-    .brand-logo {
-      font-family: var(--font-display);
-      font-size: 26px;
-      font-weight: 700;
-      color: white;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      position: relative;
-      z-index: 1;
-    }
-    .brand-content {
-      position: relative;
-      z-index: 1;
-    }
-    .brand-content h1 {
-      font-family: var(--font-display);
-      font-size: 34px;
-      font-weight: 700;
-      color: white;
-      line-height: 1.2;
-      margin-bottom: 14px;
-    }
-    .brand-content p {
-      color: rgba(255,255,255,0.72);
-      font-size: 15px;
-      line-height: 1.65;
-      max-width: 340px;
-    }
-    .brand-features {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      position: relative;
-      z-index: 1;
-    }
-    .brand-feature {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      color: rgba(255,255,255,0.82);
-      font-size: 14px;
-    }
-    .brand-feature::before {
-      content: '';
-      width: 5px; height: 5px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.5);
-      flex-shrink: 0;
     }
 
     /* Panel derecho */
@@ -194,10 +117,10 @@
       <p>Gestiona reservas, clientes y horarios sin WhatsApp, sin desorden, sin perder tiempo.</p>
     </div>
     <div class="brand-features">
-      <div class="brand-feature">Reservas automáticas 24/7</div>
-      <div class="brand-feature">Confirmaciones por WhatsApp y email</div>
-      <div class="brand-feature">Dashboard con métricas reales</div>
-      <div class="brand-feature">Sin tarjeta de crédito para empezar</div>
+      <div class="brand-feature"><i class="ti ti-calendar-check"></i>Reservas automáticas 24/7</div>
+      <div class="brand-feature"><i class="ti ti-brand-whatsapp"></i>Confirmaciones por WhatsApp y email</div>
+      <div class="brand-feature"><i class="ti ti-chart-bar"></i>Dashboard con métricas reales</div>
+      <div class="brand-feature"><i class="ti ti-credit-card-off"></i>Sin tarjeta de crédito para empezar</div>
     </div>
   </div>
 

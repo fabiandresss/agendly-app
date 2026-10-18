@@ -41,104 +41,136 @@
       gap: 6px;
     }
 
-    /* ── LAYOUT ── */
-    .booking-layout {
-      display: grid;
-      grid-template-columns: 320px 1fr;
-      min-height: calc(100vh - 56px);
-      max-width: 1100px;
-      margin: 0 auto;
-      gap: 0;
+    /* ── HERO DEL NEGOCIO (ancho completo) ── */
+    .biz-hero {
+      background: linear-gradient(180deg, #ffffff 0%, #f7f6ff 100%);
+      border-bottom: 1px solid var(--border-default);
     }
-
-    /* ── PANEL IZQUIERDO ── */
-    .biz-panel {
-      background: var(--surface-card);
-      border-right: 1px solid var(--border-default);
-      padding: 32px 28px;
-      position: sticky;
-      top: 56px;
-      height: calc(100vh - 56px);
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 28px;
+    .hero-inner {
+      max-width: 1120px; margin: 0 auto;
+      padding: 38px 24px 34px;
+      display: flex; align-items: center; gap: 28px;
     }
-    .biz-header { display: flex; flex-direction: column; gap: 10px; }
     .biz-avatar {
-      width: 56px; height: 56px;
-      border-radius: var(--radius-lg);
+      width: 96px; height: 96px; flex-shrink: 0;
+      border-radius: 28px;
       background: var(--brand-primary-light);
       color: var(--brand-primary);
       display: flex; align-items: center; justify-content: center;
       font-family: var(--font-display);
-      font-size: 22px; font-weight: 700;
+      font-size: 36px; font-weight: 700;
+      overflow: hidden;
+      border: 4px solid #fff;
+      box-shadow: 0 8px 24px rgba(79,70,229,0.16);
     }
+    .biz-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .hero-main { min-width: 0; flex: 1; }
     .biz-title {
       font-family: var(--font-display);
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 34px; font-weight: 700; line-height: 1.12;
       color: var(--text-primary);
-      line-height: 1.2;
     }
-    .biz-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+    .hero-desc {
+      margin-top: 10px; max-width: 700px;
+      font-size: 15px; line-height: 1.65; color: var(--text-secondary);
     }
+    .biz-meta { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 18px; }
     .biz-meta-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      color: var(--text-secondary);
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-pill);
+      font-size: 13px; font-weight: 500; color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--transition-fast);
     }
-    .biz-meta-item i { font-size: 15px; color: var(--text-muted); flex-shrink: 0; }
-    .biz-divider { height: 1px; background: var(--border-default); }
+    a.biz-meta-item:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-primary-light); }
+    .biz-meta-item i { font-size: 15px; color: var(--brand-primary); flex-shrink: 0; }
+    .hero-perks {
+      list-style: none; margin: 0 0 0 auto; padding: 16px 20px;
+      display: flex; flex-direction: column; gap: 11px; flex-shrink: 0;
+      background: rgba(255,255,255,0.75); border: 1px solid var(--border-default); border-radius: 16px;
+      font-size: 13px; color: var(--text-secondary);
+    }
+    .hero-perks li { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+    .hero-perks i { font-size: 17px; color: var(--brand-primary); }
+    .topbar-link { font-size: 13px; font-weight: 600; color: var(--brand-primary); text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .topbar-link:hover { text-decoration: underline; }
 
-    /* Resumen de selección */
-    .selection-summary { display: flex; flex-direction: column; gap: 12px; }
+    /* ── LAYOUT: flujo de reserva + resumen lateral ── */
+    .booking-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 28px;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 28px 24px 56px;
+      align-items: start;
+    }
+    .form-panel {
+      grid-column: 1; grid-row: 1;
+      min-width: 0;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 20px;
+      padding: 32px 36px 36px;
+      box-shadow: 0 1px 2px rgba(30,27,75,0.04), 0 10px 32px rgba(30,27,75,0.05);
+    }
+
+    /* Al terminar la reserva: solo la tarjeta de confirmación, centrada */
+    .booking-layout.is-done { grid-template-columns: minmax(0, 680px); justify-content: center; }
+    .booking-layout.is-done .summary-panel { display: none; }
+
+    /* ── RESUMEN (tarjeta lateral fija) ── */
+    .summary-panel {
+      grid-column: 2; grid-row: 1;
+      position: sticky; top: 80px;
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: 20px;
+      padding: 22px;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 1px 2px rgba(30,27,75,0.04), 0 10px 32px rgba(30,27,75,0.05);
+    }
+    .selection-summary { display: flex; flex-direction: column; gap: 10px; }
     .summary-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 4px;
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700;
+      color: var(--text-primary);
     }
     .summary-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 12px;
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px;
       background: var(--surface-subtle);
       border-radius: var(--radius-md);
       border: 1px solid var(--border-default);
-      transition: border-color var(--transition-fast);
+      transition: border-color var(--transition-fast), background var(--transition-fast);
     }
-    .summary-item.filled { border-color: var(--brand-primary-light); background: var(--brand-primary-light); }
+    .summary-item.filled { border-color: #d9d6ff; background: var(--brand-primary-light); }
     .summary-item-icon {
-      width: 28px; height: 28px;
+      width: 30px; height: 30px;
       border-radius: var(--radius-sm);
       background: var(--border-default);
       display: flex; align-items: center; justify-content: center;
-      font-size: 14px;
-      color: var(--text-muted);
+      font-size: 15px; color: var(--text-muted);
       flex-shrink: 0;
       transition: all var(--transition-fast);
     }
-    .summary-item.filled .summary-item-icon {
-      background: var(--brand-primary);
-      color: white;
-    }
+    .summary-item.filled .summary-item-icon { background: var(--brand-primary); color: white; }
     .summary-item-label { font-size: 11px; color: var(--text-muted); }
-    .summary-item-value { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-
-    /* ── PANEL DERECHO ── */
-    .form-panel {
-      padding: 32px 36px;
-      overflow-y: auto;
+    .summary-item-value { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+    .summary-total { border-top: 1px dashed var(--border-strong); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+    .summary-total-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--text-secondary); }
+    .summary-total-row b { color: var(--text-primary); font-weight: 600; }
+    .summary-total-row.total { font-size: 14px; color: var(--text-primary); font-weight: 600; }
+    .summary-total-row.total b { font-family: var(--font-display); font-size: 20px; color: var(--brand-primary); font-weight: 700; }
+    .summary-note {
+      display: flex; gap: 9px; align-items: flex-start;
+      font-size: 12px; line-height: 1.5; color: var(--text-secondary);
+      background: var(--surface-subtle); border-radius: var(--radius-md); padding: 10px 12px;
     }
+    .summary-note i { font-size: 15px; color: var(--color-success); flex-shrink: 0; margin-top: 1px; }
 
     /* ── STEPS INDICATOR ── */
     .steps-bar {
@@ -423,33 +455,43 @@
     /* ── SKELETON ── */
     .skel { background: linear-gradient(90deg, var(--border-default) 25%, var(--surface-subtle) 50%, var(--border-default) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-md); }
 
+    /* ── PANTALLAS MEDIANAS ── */
+    @media (min-width: 769px) and (max-width: 980px) {
+      .hero-perks { display: none; }
+      .hero-inner { padding: 30px 20px 28px; }
+      .booking-layout { grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; padding: 22px 20px 48px; }
+      .form-panel { padding: 26px 24px 28px; }
+      .summary-panel { padding: 18px; }
+    }
+
     /* ── MOBILE ── */
     @media (max-width: 768px) {
       body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
 
-      /* Barra superior: solo el logo (el nombre del negocio va en la tarjeta de abajo) */
+      /* Barra superior: solo el logo (el nombre del negocio va en el encabezado de abajo) */
       .booking-topbar { height: 52px; padding: 0 16px; }
-      .biz-name-tag { display: none; }
+      .biz-name-tag, .topbar-link { display: none; }
 
       /* El contenido ocupa el alto restante, sin repartir espacio entre filas */
-      .booking-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+      .booking-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 0; gap: 0; max-width: none; }
 
-      /* Tarjeta del negocio compacta: avatar + nombre, y contacto en una línea */
-      .biz-panel {
-        position: static; height: auto; overflow: visible;
-        display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 12px;
-        padding: 14px 16px; border-right: none; border-bottom: 1px solid var(--border-default);
+      /* Encabezado del negocio compacto: avatar + nombre, y contacto en chips pequeños */
+      .hero-inner {
+        display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 12px;
+        padding: 14px 16px;
       }
-      .biz-header { display: contents; }
-      .biz-avatar { width: 42px; height: 42px; font-size: 16px; border-radius: var(--radius-md); }
-      .biz-title { font-size: 17px; }
-      .biz-meta { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: 2px 14px; margin-top: 4px; }
-      .biz-meta-item { font-size: 12px; gap: 5px; }
+      .hero-main { display: contents; }
+      /* !important: el JS le pone display inline al mostrarla en escritorio */
+      .hero-desc { display: none !important; }
+      .biz-avatar { width: 42px; height: 42px; font-size: 16px; border-radius: var(--radius-md); border-width: 2px; box-shadow: none; }
+      .biz-title { font-size: 17px; align-self: center; }
+      .biz-meta { grid-column: 1 / -1; gap: 6px 8px; margin-top: 6px; }
+      .biz-meta-item { font-size: 12px; gap: 6px; padding: 5px 10px; }
       .biz-meta-item i { font-size: 13px; }
-      .biz-divider, .selection-summary { display: none; }
+      .summary-panel, .hero-perks { display: none; }
 
       /* Panel del formulario: ocupa el resto y deja los botones pegados abajo */
-      .form-panel { flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 16px 16px 0; }
+      .form-panel { flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 16px 16px 0; background: transparent; border: none; border-radius: 0; box-shadow: none; }
       .error-banner { margin-bottom: 14px; }
       .steps-bar { margin-bottom: 18px; }
       .step-dot { width: 26px; height: 26px; font-size: 11.5px; }
@@ -501,55 +543,29 @@
 <div class="booking-topbar">
   <a href="#" class="booking-logo"><img src="assets/logo.png" alt="Agendly" style="height:26px;width:auto;display:block;"></a>
   <div class="biz-name-tag">
-    <i class="ti ti-map-pin" style="font-size:14px;"></i>
-    <span id="topbar-biz-name">Cargando...</span>
+    <a class="topbar-link" id="topbar-profile" href="#"><i class="ti ti-id-badge-2" style="font-size:15px;"></i>Ver perfil del negocio</a>
   </div>
 </div>
 
+<!-- HERO DEL NEGOCIO -->
+<header class="biz-hero">
+  <div class="hero-inner">
+    <div class="biz-avatar" id="biz-avatar">?</div>
+    <div class="hero-main">
+      <h1 class="biz-title" id="biz-title">Cargando...</h1>
+      <p class="hero-desc" id="biz-desc" style="display:none;"></p>
+      <div class="biz-meta" id="biz-meta"></div>
+    </div>
+    <ul class="hero-perks" aria-label="Qué incluye tu reserva">
+      <li><i class="ti ti-brand-whatsapp"></i>Confirmación por WhatsApp</li>
+      <li><i class="ti ti-bell-ringing"></i>Recordatorio antes de tu cita</li>
+      <li><i class="ti ti-calendar-event"></i>Cancela o reagenda online</li>
+    </ul>
+  </div>
+</header>
+
 <!-- LAYOUT -->
 <div class="booking-layout">
-
-  <!-- Panel izquierdo -->
-  <aside class="biz-panel">
-    <div class="biz-header">
-      <div class="biz-avatar" id="biz-avatar">?</div>
-      <div>
-        <div class="biz-title" id="biz-title">Cargando...</div>
-      </div>
-    </div>
-
-    <div class="biz-meta" id="biz-meta"></div>
-
-    <div class="biz-divider"></div>
-
-    <div class="selection-summary">
-      <div class="summary-title">Tu selección</div>
-
-      <div class="summary-item" id="sum-service">
-        <div class="summary-item-icon"><i class="ti ti-tools"></i></div>
-        <div>
-          <div class="summary-item-label">Servicio</div>
-          <div class="summary-item-value" id="sum-service-val">Sin seleccionar</div>
-        </div>
-      </div>
-
-      <div class="summary-item" id="sum-pro">
-        <div class="summary-item-icon"><i class="ti ti-user"></i></div>
-        <div>
-          <div class="summary-item-label">Profesional</div>
-          <div class="summary-item-value" id="sum-pro-val">Sin seleccionar</div>
-        </div>
-      </div>
-
-      <div class="summary-item" id="sum-date">
-        <div class="summary-item-icon"><i class="ti ti-calendar"></i></div>
-        <div>
-          <div class="summary-item-label">Fecha y hora</div>
-          <div class="summary-item-value" id="sum-date-val">Sin seleccionar</div>
-        </div>
-      </div>
-    </div>
-  </aside>
 
   <!-- Panel derecho -->
   <div class="form-panel">
@@ -687,6 +703,46 @@
     </div>
 
   </div>
+
+  <!-- Resumen lateral -->
+  <aside class="summary-panel" id="summary-panel" aria-label="Resumen de tu reserva">
+    <div class="selection-summary">
+      <div class="summary-title">Tu reserva</div>
+
+      <div class="summary-item" id="sum-service">
+        <div class="summary-item-icon"><i class="ti ti-tools"></i></div>
+        <div>
+          <div class="summary-item-label">Servicio</div>
+          <div class="summary-item-value" id="sum-service-val">Sin seleccionar</div>
+        </div>
+      </div>
+
+      <div class="summary-item" id="sum-pro">
+        <div class="summary-item-icon"><i class="ti ti-user"></i></div>
+        <div>
+          <div class="summary-item-label">Profesional</div>
+          <div class="summary-item-value" id="sum-pro-val">Sin seleccionar</div>
+        </div>
+      </div>
+
+      <div class="summary-item" id="sum-date">
+        <div class="summary-item-icon"><i class="ti ti-calendar"></i></div>
+        <div>
+          <div class="summary-item-label">Fecha y hora</div>
+          <div class="summary-item-value" id="sum-date-val">Sin seleccionar</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-total" id="sum-total" style="display:none;">
+      <div class="summary-total-row"><span>Duración</span><b id="sum-dur">—</b></div>
+      <div class="summary-total-row total"><span>Total</span><b id="sum-price">—</b></div>
+    </div>
+
+    <div class="summary-note" id="sum-note" style="display:none;">
+      <i class="ti ti-shield-check"></i><span id="sum-note-text"></span>
+    </div>
+  </aside>
 </div>
 
 <script>
@@ -744,10 +800,24 @@ function goStep(n) {
   });
 
   state.currentStep = n;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  scrollToWizard();
+}
+
+// Al cambiar de paso la página solo se desplaza si el inicio de la tarjeta de reserva quedó
+// fuera de vista, y lo hace hasta ese inicio (bajo la barra superior), no hasta el tope de la
+// página: así el encabezado del negocio no tapa el formulario ni obliga a volver a bajar.
+function scrollToWizard() {
+  const card = document.querySelector('.form-panel');
+  const bar  = document.querySelector('.booking-topbar');
+  const target = card.getBoundingClientRect().top + window.scrollY - (bar ? bar.offsetHeight : 0) - 12;
+  if (window.scrollY > target + 1) window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
 }
 
 // ── SUMMARY PANEL ──────────────────────────────────────
+// "2026-10-21" + "10:00" → "mié 21 oct · 10:00"
+const fmtSummaryDate = (date, time) =>
+  new Date(`${date}T12:00:00`).toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' }) + ` · ${time}`;
+
 function updateSummary() {
   // Servicio
   if (state.selectedService) {
@@ -767,11 +837,18 @@ function updateSummary() {
   }
   // Fecha y hora
   if (state.selectedDate && state.selectedTime) {
-    $('sum-date-val').textContent = `${state.selectedDate} · ${state.selectedTime}`;
+    $('sum-date-val').textContent = fmtSummaryDate(state.selectedDate, state.selectedTime);
     $('sum-date').classList.add('filled');
   } else {
     $('sum-date-val').textContent = 'Sin seleccionar';
     $('sum-date').classList.remove('filled');
+  }
+  // Duración y total del servicio elegido
+  const svc = state.selectedService;
+  $('sum-total').style.display = svc ? 'flex' : 'none';
+  if (svc) {
+    $('sum-dur').textContent   = `${svc.duration_min} min`;
+    $('sum-price').textContent = fmtCLP(svc.price);
   }
 }
 
@@ -910,7 +987,7 @@ function renderSlots(slots) {
       grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.selectedTime = time;
-      $('sum-date-val').textContent = `${state.selectedDate} · ${time}`;
+      $('sum-date-val').textContent = fmtSummaryDate(state.selectedDate, time);
       $('sum-date').classList.add('filled');
       $('btn-step3-next').disabled = false;
       updateSummary();
@@ -990,6 +1067,7 @@ function showConfirmation(appt, name, phone) {
   // Ocultar steps y stepper
   document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
   $('steps-bar').style.display = 'none';
+  document.querySelector('.booking-layout').classList.add('is-done');
 
   const dateStr = fmtDate(appt.scheduled_at);
   $('confirm-card').innerHTML = `
@@ -1025,6 +1103,7 @@ function showConfirmation(appt, name, phone) {
     </div>`;
 
   $('confirm-screen').classList.add('show');
+  scrollToWizard();
 }
 
 // ── INIT ───────────────────────────────────────────────
@@ -1058,17 +1137,37 @@ async function init() {
 
     state.business = biz;
 
-    // Topbar y panel izquierdo
-    $('topbar-biz-name').textContent = biz.name;
-    $('biz-title').textContent       = biz.name;
-    $('biz-avatar').textContent      = initials(biz.name);
-    document.title                   = `${biz.name} — Reserva tu hora`;
+    // Encabezado del negocio
+    document.title = `${biz.name} — Reserva tu hora`;
+    $('biz-title').textContent = biz.name;
+    if (biz.photo_url && /^https?:\/\//i.test(biz.photo_url)) {
+      $('biz-avatar').innerHTML = `<img src="${esc(biz.photo_url)}" alt="${esc(biz.name)}"/>`;
+    } else {
+      $('biz-avatar').textContent = initials(biz.name);
+    }
+    if (biz.description) { $('biz-desc').textContent = biz.description; $('biz-desc').style.display = 'block'; }
+    $('topbar-profile').href = `profile.html?negocio=${encodeURIComponent(biz.slug)}`;
 
-    // Meta info
+    // Contacto en chips (dirección → mapa, teléfono → llamar, redes sociales)
+    const chip = (icon, text, href) => href
+      ? `<a class="biz-meta-item" href="${esc(href)}" target="_blank" rel="noopener noreferrer"><i class="ti ${icon}"></i>${esc(text)}</a>`
+      : `<span class="biz-meta-item"><i class="ti ${icon}"></i>${esc(text)}</span>`;
     const metaItems = [];
-    if (biz.address) metaItems.push(`<div class="biz-meta-item"><i class="ti ti-map-pin"></i>${esc(biz.address)}</div>`);
-    if (biz.phone)   metaItems.push(`<div class="biz-meta-item"><i class="ti ti-phone"></i>${esc(biz.phone)}</div>`);
+    if (biz.address) metaItems.push(chip('ti-map-pin', biz.address, `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(biz.address)}`));
+    if (biz.phone)   metaItems.push(chip('ti-phone', biz.phone, `tel:${biz.phone.replace(/[^\d+]/g, '')}`));
+    if (biz.whatsapp_contact) metaItems.push(chip('ti-brand-whatsapp', 'WhatsApp', `https://wa.me/${biz.whatsapp_contact.replace(/\D/g, '')}`));
+    if (biz.instagram) metaItems.push(chip('ti-brand-instagram', biz.instagram.startsWith('@') ? biz.instagram : '@' + biz.instagram, `https://instagram.com/${encodeURIComponent(biz.instagram.replace('@', ''))}`));
+    if (biz.facebook)  metaItems.push(chip('ti-brand-facebook', 'Facebook', /^https?:\/\//i.test(biz.facebook) ? biz.facebook : 'https://facebook.com/' + encodeURIComponent(biz.facebook)));
     $('biz-meta').innerHTML = metaItems.join('');
+
+    // Política de cancelación (dato real del negocio)
+    if (typeof biz.cancellation_min_hours === 'number') {
+      const h = biz.cancellation_min_hours;
+      $('sum-note-text').textContent = h > 0
+        ? `Puedes cancelar o reagendar tu hora hasta ${h} ${h === 1 ? 'hora' : 'horas'} antes de la cita.`
+        : 'Puedes cancelar o reagendar tu hora hasta el momento de la cita.';
+      $('sum-note').style.display = 'flex';
+    }
 
     renderServices(svcs);
 

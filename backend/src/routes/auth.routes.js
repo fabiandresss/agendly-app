@@ -12,6 +12,7 @@ router.post('/reset-password',  authLimiter, authController.resetPassword);
 // Protegidas — requieren estar logueado
 router.post('/setup-business',  authMiddleware, authController.setupBusiness);
 router.get('/my-business',      authMiddleware, authController.getMyBusiness);
+router.get('/me',               authMiddleware, authController.me);
 router.post('/change-password', authMiddleware, authLimiter, authController.changePassword);
 
 module.exports = router;

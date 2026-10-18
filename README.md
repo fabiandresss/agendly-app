@@ -34,6 +34,12 @@ sin Twilio/Resend la app funciona, solo que no envía notificaciones.
 
 ### Frontend
 
+> **Versionado de archivos estáticos.** Cada página referencia sus CSS/JS con una huella del contenido
+> (`styles/design-system.css?v=0c902f78`). Así, cuando un archivo cambia, el navegador lo descarga de nuevo
+> en vez de usar una copia vieja (síntomas típicos: estilos rotos o botones que no responden tras actualizar).
+> Se actualiza solo en cada commit (`git config core.hooksPath .githooks`, una vez por clon); también puedes
+> ejecutarlo a mano con `python scripts/cache_bust.py`, o `--check` para solo verificar.
+
 Sirve la carpeta `frontend/` con cualquier servidor estático (por ejemplo la extensión *Live Server*
 de VS Code, puerto 5500). Alternativa sin instalar nada y sin caché:
 
@@ -51,7 +57,7 @@ python .claude/dev_server.py 5500 frontend
 |---|---|---|
 | `register.html`, `login.html` | Dueño | Crear cuenta / iniciar sesión |
 | `forgot-password.html`, `reset-password.html` | Dueño | Recuperar contraseña con un enlace enviado por correo |
-| `onboarding.html` | Dueño | Crea el negocio, servicios y profesionales (con horario lun–vie 9–18 por defecto) |
+| `onboarding.html` | Dueño | Asistente de 4 pasos: negocio, servicios, equipo y confirmación. El dueño puede agregarse como profesional con el nombre y correo de su cuenta; cada profesional parte con horario lun–vie 9–18 y todos los servicios |
 | `app.html?negocio=slug` | Dueño | Panel: dashboard, reservas, **calendario** (día, semana, mes y año), servicios, profesionales, horarios, bloqueos, clientes, configuración |
 | `profile.html?negocio=slug` | Público | Perfil del negocio |
 | `index.html?negocio=slug` | Cliente | Reservar hora: encabezado del negocio (foto, tipo, descripción, contacto y redes), flujo de 4 pasos y resumen lateral con duración, total y política de cancelación |
@@ -78,6 +84,10 @@ Todas las páginas están pensadas para celular (probadas en 375 px, tablet y es
 - Un profesional puede tener varios tramos por día. La reserva debe caber completa en un tramo.
 - Los **bloqueos** (feriados, vacaciones) cierran la agenda del negocio o de un profesional.
 - Un profesional sin servicios asignados ofrece todos.
+- **Selectores propios:** las fechas y los menús desplegables usan componentes de la app (`frontend/ui.js`) en vez de los controles nativos del navegador:
+  calendario con navegación por mes/año y teclado, días no disponibles bloqueados, y menú con avatares. En el celular se abren como hoja inferior.
+  Para usarlos: `<input type="hidden" data-datepicker>` o `<select data-dropdown="avatars">`; siguen funcionando `.value`, `.min` y los eventos `change`.
+- **Precios:** los campos de precio se formatean al escribir (`$10.000`, `$130.000`) en el onboarding y en el panel; en la base se guardan como número.
 - **Reservas vencidas:** una reserva pendiente cuya fecha ya pasó nunca se confirmó, así que se muestra como
   **Vencida** y ya no se puede confirmar, reagendar ni cancelar (el servidor lo rechaza). No cuenta como pendiente
   ni como ingreso proyectado; en Reservas tiene su propio filtro y en el calendario se ven al activar

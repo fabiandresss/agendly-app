@@ -9,6 +9,17 @@ const notificationService = require('../services/notification.service');
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SLUG_REGEX  = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/** Datos públicos del usuario que el frontend necesita (nombre del admin, etc.). */
+function publicUser(user) {
+  const meta = user.user_metadata ?? {};
+  return {
+    id:         user.id,
+    email:      user.email,
+    first_name: meta.first_name ?? '',
+    last_name:  meta.last_name  ?? '',
+  };
+}
+
 // Horario por defecto de cada profesional creado en el onboarding (lun–vie).
 // Sin horario nadie podría reservar; el dueño lo ajusta después en el panel.
 const DEFAULT_SCHEDULE = { days: [1, 2, 3, 4, 5], start_time: '09:00', end_time: '18:00' };
@@ -96,16 +107,22 @@ async function login(req, res) {
     res.json({
       access_token:  data.session.access_token,
       refresh_token: data.session.refresh_token,
-      user: {
-        id:    data.user.id,
-        email: data.user.email,
-      },
+      user: publicUser(data.user),
     });
 
   } catch (err) {
     console.error('[auth.controller] login:', err.message);
     res.status(500).json({ error: 'Error al iniciar sesión' });
   }
+}
+
+/**
+ * GET /api/auth/me
+ * Datos del usuario con sesión: sirve para precargar su nombre (por ejemplo al
+ * agregarlo como profesional en el onboarding).
+ */
+function me(req, res) {
+  res.json({ data: publicUser(req.user) });
 }
 
 /**
@@ -397,4 +414,4 @@ async function getMyBusiness(req, res) {
   }
 }
 
-module.exports = { register, login, forgotPassword, resetPassword, changePassword, setupBusiness, getMyBusiness };
+module.exports = { register, login, me, forgotPassword, resetPassword, changePassword, setupBusiness, getMyBusiness };

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Antes de cada commit actualiza las versiones (?v=huella) de los CSS/JS del frontend,
+# para que los navegadores nunca sigan usando una copia vieja tras una actualización.
+# Se activa con:  git config core.hooksPath .githooks
+command -v python >/dev/null 2>&1 || exit 0
+python scripts/cache_bust.py >/dev/null 2>&1 || exit 0
+git add frontend/*.html
+exit 0

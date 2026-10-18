@@ -38,6 +38,7 @@
     .top-service-count { font-size: .85rem; color: var(--muted); }
     .bar-fill { height: 6px; background: var(--p); border-radius: 4px; margin-top: .25rem; transition: width .4s; }
   </style>
+  <script src="config.js"></script>
 </head>
 <body>
 
@@ -202,7 +203,7 @@
 //  CONFIG Y SESIÓN
 // ════════════════════════════════════════════════════════
 
-const API  = 'http://localhost:3000';
+const API  = AGENDLY_API;
 const TOKEN = sessionStorage.getItem('agendly_token');
 const SLUG  = new URLSearchParams(location.search).get('negocio')
            || sessionStorage.getItem('agendly_slug');
@@ -309,7 +310,7 @@ function renderTopServices(services) {
         <div class="top-service-row">
           <div class="top-service-rank">${i + 1}</div>
           <div style="flex:1;">
-            <div class="top-service-name">${s.name}</div>
+            <div class="top-service-name">${esc(s.name)}</div>
             <div class="bar-fill" style="width:${Math.round(s.count/max*100)}%"></div>
           </div>
           <div class="top-service-count">${s.count} reservas</div>
@@ -381,7 +382,7 @@ async function loadServicesTable() {
             <tbody>
               ${data.map(s => `
                 <tr>
-                  <td><strong>${s.name}</strong>${s.description ? `<br><small class="text-muted">${s.description}</small>` : ''}</td>
+                  <td><strong>${esc(s.name)}</strong>${s.description ? `<br><small class="text-muted">${esc(s.description)}</small>` : ''}</td>
                   <td>${s.duration_min} min</td>
                   <td>${fmtCLP(s.price)}</td>
                   <td>
@@ -391,7 +392,7 @@ async function loadServicesTable() {
                   </td>
                   <td>
                     <button class="btn btn-sm btn-outline-primary me-1"
-                            onclick="openServiceModal(${JSON.stringify(s).replace(/"/g,'&quot;')})">
+                            onclick="openServiceModal(${esc(JSON.stringify(s))})">
                       Editar
                     </button>
                     <button class="btn btn-sm ${s.is_active ? 'btn-outline-danger' : 'btn-outline-success'}"
@@ -475,9 +476,9 @@ async function loadProfessionalsTable() {
             <tbody>
               ${data.map(p => `
                 <tr>
-                  <td><strong>${p.name}</strong>${p.bio ? `<br><small class="text-muted">${p.bio}</small>` : ''}</td>
-                  <td>${p.email ?? '—'}</td>
-                  <td>${p.phone ?? '—'}</td>
+                  <td><strong>${esc(p.name)}</strong>${p.bio ? `<br><small class="text-muted">${esc(p.bio)}</small>` : ''}</td>
+                  <td>${esc(p.email ?? '—')}</td>
+                  <td>${esc(p.phone ?? '—')}</td>
                   <td>
                     <span class="badge ${p.is_active ? 'bg-success' : 'bg-secondary'}">
                       ${p.is_active ? 'Activo' : 'Inactivo'}
@@ -485,7 +486,7 @@ async function loadProfessionalsTable() {
                   </td>
                   <td>
                     <button class="btn btn-sm btn-outline-primary me-1"
-                            onclick="openProModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+                            onclick="openProModal(${esc(JSON.stringify(p))})">
                       Editar
                     </button>
                     <button class="btn btn-sm ${p.is_active ? 'btn-outline-danger' : 'btn-outline-success'}"
@@ -553,7 +554,7 @@ async function loadSchedulesProfessionals() {
   const sel  = document.getElementById('schedule-pro-select');
   sel.innerHTML = '<option value="">Selecciona un profesional</option>' +
     data.filter(p => p.is_active)
-        .map(p => `<option value="${p.id}">${p.name}</option>`)
+        .map(p => `<option value="${p.id}">${esc(p.name)}</option>`)
         .join('');
   document.getElementById('schedules-editor').innerHTML = '';
 }

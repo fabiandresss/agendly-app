@@ -1,14 +1,21 @@
 // src/controllers/auth.controller.js
-// Maneja registro y login usando Supabase Auth.
+// Maneja registro, login, cambio de contraseña y configuración inicial del negocio.
 
-const supabaseAdmin  = require('../config/supabaseAdmin');
-const supabase       = require('../config/supabase');
+const supabaseAdmin   = require('../config/supabaseAdmin');
+const supabase        = require('../config/supabase');
 const businessService = require('../services/business.service');
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const SLUG_REGEX  = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+// Horario por defecto de cada profesional creado en el onboarding (lun–vie).
+// Sin horario nadie podría reservar; el dueño lo ajusta después en el panel.
+const DEFAULT_SCHEDULE = { days: [1, 2, 3, 4, 5], start_time: '09:00', end_time: '18:00' };
 
 /**
  * POST /api/auth/register
- * Body: { email, password, businessSlug }
- * Crea el usuario en Supabase Auth y lo asocia al negocio.
+ * Body: { email, password, confirmPassword, firstName, lastName }
+ * Crea el usuario en Supabase Auth. El negocio se crea después en el onboarding.
  */
 async function register(req, res) {
   try {
@@ -30,8 +37,7 @@ async function register(req, res) {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!EMAIL_REGEX.test(email)) {
       return res.status(400).json({ error: 'El formato del email no es válido' });
     }
 
@@ -44,7 +50,8 @@ async function register(req, res) {
     });
 
     if (authError) {
-      if (authError.message.includes('already registered')) {
+      // Supabase: code "email_exists" o mensaje "...has already been registered"
+      if (authError.code === 'email_exists' || /already\s+(been\s+)?registered/i.test(authError.message)) {
         return res.status(409).json({ error: 'Este email ya está registrado' });
       }
       throw authError;
@@ -74,7 +81,8 @@ async function login(req, res) {
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    // Cliente desechable: ver comentario en config/supabase.js
+    const { data, error } = await supabase.createAuthClient().auth.signInWithPassword({
       email,
       password,
     });
@@ -100,11 +108,48 @@ async function login(req, res) {
 }
 
 /**
+ * POST /api/auth/change-password
+ * Body: { currentPassword, newPassword }
+ * Requiere sesión. Verifica la contraseña actual antes de cambiarla.
+ */
+async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'La contraseña actual y la nueva son requeridas' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres' });
+    }
+
+    const { error: verifyErr } = await supabase.createAuthClient().auth.signInWithPassword({
+      email:    req.user.email,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      return res.status(400).json({ error: 'La contraseña actual es incorrecta' });
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(req.user.id, { password: newPassword });
+    if (error) throw error;
+
+    res.json({ message: 'Contraseña actualizada' });
+
+  } catch (err) {
+    console.error('[auth.controller] changePassword:', err.message);
+    res.status(500).json({ error: 'Error al cambiar la contraseña' });
+  }
+}
+
+/**
  * POST /api/auth/setup-business
  * Crea el negocio del usuario recién registrado.
  * Solo se llama una vez, desde el onboarding.
  */
 async function setupBusiness(req, res) {
+  let createdBusinessId = null;
+
   try {
     const {
       name, slug, businessType, address, phone,
@@ -118,9 +163,7 @@ async function setupBusiness(req, res) {
       return res.status(400).json({ error: 'name, slug y businessType son requeridos' });
     }
 
-    // Validar formato del slug
-    const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-    if (!slugRegex.test(slug)) {
+    if (!SLUG_REGEX.test(slug) || slug.length > 60) {
       return res.status(400).json({
         error: 'El slug solo puede contener letras minúsculas, números y guiones'
       });
@@ -133,17 +176,16 @@ async function setupBusiness(req, res) {
     }
 
     // Verificar que el usuario no tenga ya un negocio
-    const { data: existingBiz } = await require('../config/supabase')
+    const { data: existingBiz } = await supabase
       .from('businesses')
       .select('id')
       .eq('owner_id', userId)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
     if (existingBiz) {
       return res.status(409).json({ error: 'Ya tienes un negocio registrado' });
     }
-
-    const supabase = require('../config/supabase');
 
     // 1. Crear el negocio
     const { data: business, error: bizError } = await supabase
@@ -162,33 +204,38 @@ async function setupBusiness(req, res) {
       .single();
 
     if (bizError) throw bizError;
+    createdBusinessId = business.id;
 
     // 2. Crear servicios si se enviaron
-    if (services && services.length > 0) {
+    let createdServices = [];
+    if (Array.isArray(services) && services.length > 0) {
       const serviceRows = services
         .filter(s => s.name && s.duration_min)
         .map(s => ({
           business_id:  business.id,
-          name:         s.name,
+          name:         String(s.name).trim(),
           description:  s.description || null,
-          duration_min: parseInt(s.duration_min),
+          duration_min: parseInt(s.duration_min, 10),
           price:        parseFloat(s.price) || 0,
           is_active:    true
-        }));
+        }))
+        .filter(s => s.duration_min >= 5 && s.duration_min <= 480);
 
       if (serviceRows.length > 0) {
-        const { error: svcErr } = await supabase.from('services').insert(serviceRows);
+        const { data, error: svcErr } = await supabase.from('services').insert(serviceRows).select('id');
         if (svcErr) throw svcErr;
+        createdServices = data;
       }
     }
 
     // 3. Crear profesionales si se enviaron
-    if (professionals && professionals.length > 0) {
+    let createdPros = [];
+    if (Array.isArray(professionals) && professionals.length > 0) {
       const proRows = professionals
         .filter(p => p.name)
         .map(p => ({
           business_id: business.id,
-          name:        p.name,
+          name:        String(p.name).trim(),
           email:       p.email || null,
           phone:       p.phone || null,
           bio:         p.bio   || null,
@@ -196,10 +243,16 @@ async function setupBusiness(req, res) {
         }));
 
       if (proRows.length > 0) {
-        const { error: proErr } = await supabase.from('professionals').insert(proRows);
+        const { data, error: proErr } = await supabase.from('professionals').insert(proRows).select('id');
         if (proErr) throw proErr;
+        createdPros = data;
       }
     }
+
+    // 4. Dejar el negocio listo para recibir reservas: cada profesional ofrece
+    //    todos los servicios y tiene un horario base. Si esto falla no se
+    //    revierte el negocio; el dueño puede configurarlo desde el panel.
+    await setupDefaults(createdPros, createdServices);
 
     res.status(201).json({
       message: 'Negocio configurado correctamente',
@@ -208,28 +261,67 @@ async function setupBusiness(req, res) {
 
   } catch (err) {
     console.error('[auth.controller] setupBusiness:', err.message);
-    res.status(500).json({ error: err.message || 'Error al configurar el negocio' });
+
+    // Evitar un negocio a medio crear que bloquee un segundo intento
+    // ("Ya tienes un negocio registrado"). Las filas hijas caen por cascada
+    // o quedan huérfanas sin dueño visible.
+    if (createdBusinessId) {
+      await supabase.from('services').delete().eq('business_id', createdBusinessId);
+      await supabase.from('professionals').delete().eq('business_id', createdBusinessId);
+      await supabase.from('businesses').delete().eq('id', createdBusinessId);
+    }
+
+    res.status(500).json({ error: 'Error al configurar el negocio' });
+  }
+}
+
+async function setupDefaults(professionals, services) {
+  try {
+    if (professionals.length && services.length) {
+      const links = professionals.flatMap(p =>
+        services.map(s => ({ professional_id: p.id, service_id: s.id }))
+      );
+      const { error } = await supabaseAdmin.from('professional_services').insert(links);
+      if (error) throw error;
+    }
+
+    if (professionals.length) {
+      const rows = professionals.flatMap(p =>
+        DEFAULT_SCHEDULE.days.map(d => ({
+          professional_id: p.id,
+          day_of_week:     d,
+          start_time:      DEFAULT_SCHEDULE.start_time,
+          end_time:        DEFAULT_SCHEDULE.end_time,
+        }))
+      );
+      const { error } = await supabase.from('schedules').insert(rows);
+      if (error) throw error;
+    }
+  } catch (err) {
+    console.warn('[auth.controller] setupDefaults (no crítico):', err.message);
   }
 }
 
 async function getMyBusiness(req, res) {
   try {
-    const supabase = require('../config/supabase');
     const { data, error } = await supabase
       .from('businesses')
       .select('id, name, slug, business_type, phone, address, plan')
       .eq('owner_id', req.user.id)
       .eq('is_active', true)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) throw error;
+    if (!data) {
       return res.status(404).json({ error: 'No tienes un negocio registrado' });
     }
 
     res.json({ data });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[auth.controller] getMyBusiness:', err.message);
+    res.status(500).json({ error: 'Error al obtener tu negocio' });
   }
 }
 
-module.exports = { register, login, setupBusiness, getMyBusiness };
+module.exports = { register, login, changePassword, setupBusiness, getMyBusiness };

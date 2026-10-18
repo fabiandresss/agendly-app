@@ -5,8 +5,9 @@
 const express = require('express');
 const router  = express.Router();
 const availabilityController = require('../controllers/availability.controller');
+const { publicLimiter } = require('../middleware/rateLimiter');
 
 // GET /api/availability
-router.get('/', availabilityController.getAvailability);
+router.get('/', publicLimiter, availabilityController.getAvailability);
 
 module.exports = router;

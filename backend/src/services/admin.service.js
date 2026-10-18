@@ -1,7 +1,59 @@
 'use strict';
 
-const supabase = require('../config/supabase');
+const supabase      = require('../config/supabase');
 const supabaseAdmin = require('../config/supabaseAdmin');
+const { todayStr, isValidDateStr, toMinutes } = require('../utils/time');
+
+const TIME_REGEX = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/;
+
+function badRequest(message) {
+  const err = new Error(message);
+  err.statusCode = 400;
+  return err;
+}
+
+/** Valida y normaliza los campos de un servicio. `partial` = solo valida lo enviado. */
+function validateServiceFields(f, partial) {
+  const out = {};
+  if (!partial || f.name !== undefined) {
+    const name = String(f.name ?? '').trim();
+    if (!name || name.length > 100) throw badRequest('El nombre del servicio debe tener entre 1 y 100 caracteres');
+    out.name = name;
+  }
+  if (!partial || f.duration_min !== undefined) {
+    const dur = Number(f.duration_min);
+    if (!Number.isInteger(dur) || dur < 5 || dur > 480) throw badRequest('La duración debe ser un entero entre 5 y 480 minutos');
+    out.duration_min = dur;
+  }
+  if (f.price !== undefined) {
+    const price = Number(f.price);
+    if (!Number.isFinite(price) || price < 0) throw badRequest('El precio no puede ser negativo');
+    out.price = price;
+  } else if (!partial) {
+    out.price = 0;
+  }
+  if (f.description !== undefined) out.description = f.description ? String(f.description).trim() : null;
+  if (f.is_active !== undefined)   out.is_active = Boolean(f.is_active);
+  return out;
+}
+
+/** Lanza 404 si el profesional no pertenece al negocio. */
+async function assertProfessionalInBusiness(businessId, professionalId) {
+  const { data, error } = await supabase
+    .from('professionals')
+    .select('id')
+    .eq('id', professionalId)
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  // 22P02 = UUID mal formado en la URL → se trata como "no encontrado"
+  if (error && error.code !== '22P02') throw error;
+  if (!data) {
+    const err = new Error('Profesional no encontrado');
+    err.statusCode = 404;
+    throw err;
+  }
+}
 
 // ─── SERVICIOS ────────────────────────────────────────────────────
 
@@ -16,11 +68,11 @@ async function listServices(businessId) {
 }
 
 async function createService(businessId, fields) {
-  const { name, description, duration_min, price } = fields;
+  const clean = validateServiceFields(fields, false);
 
   const { data, error } = await supabase
     .from('services')
-    .insert({ business_id: businessId, name, description, duration_min, price })
+    .insert({ business_id: businessId, ...clean })
     .select()
     .single();
 
@@ -31,9 +83,11 @@ async function createService(businessId, fields) {
 async function updateService(businessId, serviceId, fields) {
   // Solo permitir actualizar campos específicos — nunca business_id
   const allowed = ['name', 'description', 'duration_min', 'price', 'is_active'];
-  const updates = Object.fromEntries(
-    Object.entries(fields).filter(([k]) => allowed.includes(k))
+  const picked  = Object.fromEntries(
+    Object.entries(fields ?? {}).filter(([k]) => allowed.includes(k))
   );
+  if (Object.keys(picked).length === 0) throw badRequest('No hay campos válidos para actualizar');
+  const updates = validateServiceFields(picked, true);
 
   const { data, error } = await supabase
     .from('services')
@@ -43,7 +97,14 @@ async function updateService(businessId, serviceId, fields) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === 'PGRST116' || error.code === '22P02') {
+      const err = new Error('Servicio no encontrado');
+      err.statusCode = 404;
+      throw err;
+    }
+    throw error;
+  }
   return data;
 }
 
@@ -61,10 +122,17 @@ async function listProfessionals(businessId) {
 
 async function createProfessional(businessId, fields) {
   const { name, email, phone, bio } = fields;
+  if (!String(name ?? '').trim()) throw badRequest('El nombre es requerido');
 
   const { data, error } = await supabase
     .from('professionals')
-    .insert({ business_id: businessId, name, email, phone, bio })
+    .insert({
+      business_id: businessId,
+      name:        String(name).trim(),
+      email:       email || null,
+      phone:       phone || null,
+      bio:         bio   || null,
+    })
     .select()
     .single();
 
@@ -75,8 +143,10 @@ async function createProfessional(businessId, fields) {
 async function updateProfessional(businessId, professionalId, fields) {
   const allowed = ['name', 'email', 'phone', 'bio', 'is_active'];
   const updates = Object.fromEntries(
-    Object.entries(fields).filter(([k]) => allowed.includes(k))
+    Object.entries(fields ?? {}).filter(([k]) => allowed.includes(k))
   );
+  if (Object.keys(updates).length === 0) throw badRequest('No hay campos válidos para actualizar');
+  if (updates.name !== undefined && !String(updates.name).trim()) throw badRequest('El nombre es requerido');
 
   const { data, error } = await supabase
     .from('professionals')
@@ -86,35 +156,31 @@ async function updateProfessional(businessId, professionalId, fields) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === 'PGRST116' || error.code === '22P02') {
+      const err = new Error('Profesional no encontrado');
+      err.statusCode = 404;
+      throw err;
+    }
+    throw error;
+  }
   return data;
 }
 
 // ─── HORARIOS ────────────────────────────────────────────────────
 // Usamos PUT (reemplazar todo) en lugar de PATCH por fila.
-// Es más simple: envías el array completo de días activos
-// y reemplazamos los 7 días de ese profesional de una vez.
+// Es más simple: envías el array completo de tramos
+// y reemplazamos todos los de ese profesional de una vez.
 
 async function getSchedules(businessId, professionalId) {
-  // Primero verificar que el profesional pertenece al negocio
-  const { data: pro, error: proErr } = await supabase
-    .from('professionals')
-    .select('id')
-    .eq('id', professionalId)
-    .eq('business_id', businessId)
-    .single();
-
-  if (proErr || !pro) {
-    const err = new Error('Profesional no encontrado');
-    err.statusCode = 404;
-    throw err;
-  }
+  await assertProfessionalInBusiness(businessId, professionalId);
 
   const { data, error } = await supabase
     .from('schedules')
     .select('id, day_of_week, start_time, end_time')
     .eq('professional_id', professionalId)
-    .order('day_of_week');
+    .order('day_of_week')
+    .order('start_time');
 
   if (error) throw error;
   return data;
@@ -125,36 +191,34 @@ async function getSchedules(businessId, professionalId) {
  * @param {Array} schedules - [{day_of_week, start_time, end_time}]
  */
 async function replaceSchedules(businessId, professionalId, schedules) {
-  // Verificar propiedad
-  const { data: pro, error: proErr } = await supabase
-    .from('professionals')
-    .select('id')
-    .eq('id', professionalId)
-    .eq('business_id', businessId)
-    .single();
+  await assertProfessionalInBusiness(businessId, professionalId);
 
-  if (proErr || !pro) {
-    const err = new Error('Profesional no encontrado');
-    err.statusCode = 404;
-    throw err;
-  }
+  // Validar y normalizar cada horario antes de tocar la DB
+  const normalized = schedules.map(s => {
+    const day = Number(s.day_of_week);
+    if (!Number.isInteger(day) || day < 0 || day > 6) {
+      throw badRequest(`day_of_week inválido: ${s.day_of_week}`);
+    }
+    if (!TIME_REGEX.test(s.start_time ?? '') || !TIME_REGEX.test(s.end_time ?? '')) {
+      throw badRequest('start_time y end_time son requeridos con formato HH:MM');
+    }
+    const start = s.start_time.slice(0, 5);
+    const end   = s.end_time.slice(0, 5);
+    if (toMinutes(start) >= toMinutes(end)) {
+      throw badRequest(`start_time debe ser menor que end_time (día ${day})`);
+    }
+    return { day_of_week: day, start_time: start, end_time: end };
+  });
 
-  // Validar cada horario antes de tocar la DB
-  for (const s of schedules) {
-    if (s.day_of_week < 0 || s.day_of_week > 6) {
-      const err = new Error(`day_of_week inválido: ${s.day_of_week}`);
-      err.statusCode = 400;
-      throw err;
-    }
-    if (!s.start_time || !s.end_time) {
-      const err = new Error('start_time y end_time son requeridos');
-      err.statusCode = 400;
-      throw err;
-    }
-    if (s.start_time >= s.end_time) {
-      const err = new Error(`start_time debe ser menor que end_time (día ${s.day_of_week})`);
-      err.statusCode = 400;
-      throw err;
+  // Tramos del mismo día no pueden solaparse
+  const byDay = {};
+  for (const s of normalized) (byDay[s.day_of_week] ??= []).push(s);
+  for (const [day, rows] of Object.entries(byDay)) {
+    rows.sort((x, y) => toMinutes(x.start_time) - toMinutes(y.start_time));
+    for (let i = 1; i < rows.length; i++) {
+      if (toMinutes(rows[i].start_time) < toMinutes(rows[i - 1].end_time)) {
+        throw badRequest(`Los horarios del día ${day} se solapan`);
+      }
     }
   }
 
@@ -166,14 +230,9 @@ async function replaceSchedules(businessId, professionalId, schedules) {
 
   if (deleteErr) throw deleteErr;
 
-  if (schedules.length === 0) return [];
+  if (normalized.length === 0) return [];
 
-  const rows = schedules.map(s => ({
-    professional_id: professionalId,
-    day_of_week:     s.day_of_week,
-    start_time:      s.start_time,
-    end_time:        s.end_time,
-  }));
+  const rows = normalized.map(s => ({ professional_id: professionalId, ...s }));
 
   const { data, error: insertErr } = await supabase
     .from('schedules')
@@ -184,13 +243,16 @@ async function replaceSchedules(businessId, professionalId, schedules) {
   return data;
 }
 
-// Agregar al final, antes del module.exports
+// ─── NEGOCIO ─────────────────────────────────────────────────────
 
 async function updateBusiness(businessId, fields) {
-  const allowed = ['name', 'phone', 'address'];
+  const allowed = ['name', 'phone', 'address', 'description', 'photo_url', 'instagram', 'facebook', 'whatsapp_contact'];
   const updates = Object.fromEntries(
-    Object.entries(fields).filter(([k]) => allowed.includes(k))
+    Object.entries(fields ?? {}).filter(([k]) => allowed.includes(k))
   );
+  if (Object.keys(updates).length === 0) throw badRequest('No hay campos válidos para actualizar');
+  if (updates.name !== undefined && !String(updates.name).trim()) throw badRequest('El nombre es requerido');
+
   const { data, error } = await supabase
     .from('businesses')
     .update(updates)
@@ -201,12 +263,14 @@ async function updateBusiness(businessId, fields) {
   return data;
 }
 
+// ─── BLOQUEOS ────────────────────────────────────────────────────
+
 async function listBlocks(businessId) {
   const { data, error } = await supabase
     .from('blocks')
     .select('id, name, start_date, end_date, professional_id')
     .eq('business_id', businessId)
-    .gte('end_date', new Date().toISOString().split('T')[0])
+    .gte('end_date', todayStr())
     .order('start_date');
   if (error) throw error;
   return data;
@@ -214,11 +278,18 @@ async function listBlocks(businessId) {
 
 async function createBlock(businessId, fields) {
   const { name, start_date, end_date, professional_id } = fields;
+
+  if (!isValidDateStr(start_date) || !isValidDateStr(end_date)) {
+    throw badRequest('Las fechas deben tener formato YYYY-MM-DD');
+  }
+  if (start_date > end_date) throw badRequest('start_date debe ser antes que end_date');
+  if (professional_id) await assertProfessionalInBusiness(businessId, professional_id);
+
   const { data, error } = await supabase
     .from('blocks')
     .insert({
       business_id:     businessId,
-      name,
+      name:            String(name).trim(),
       start_date,
       end_date,
       professional_id: professional_id || null,
@@ -238,30 +309,22 @@ async function deleteBlock(businessId, blockId) {
   if (error) throw error;
 }
 
-async function getProfessionalServices(professionalId) {
-  const { data, error } = await supabase
+// ─── SERVICIOS POR PROFESIONAL ───────────────────────────────────
+
+async function getProfessionalServices(businessId, professionalId) {
+  await assertProfessionalInBusiness(businessId, professionalId);
+
+  const { data, error } = await supabaseAdmin
     .from('professional_services')
     .select('service_id, services(id, name, duration_min, price)')
     .eq('professional_id', professionalId);
   if (error) throw error;
-  return data.map(r => r.services);
+  return data.map(r => r.services).filter(Boolean);
 }
 
-
 async function setProfessionalServices(businessId, professionalId, serviceIds) {
-  // Verificar propiedad
-  const { data: pro, error: proErr } = await supabaseAdmin
-    .from('professionals')
-    .select('id')
-    .eq('id', professionalId)
-    .eq('business_id', businessId)
-    .single();
-
-  if (proErr || !pro) {
-    const err = new Error('Profesional no encontrado');
-    err.statusCode = 404;
-    throw err;
-  }
+  await assertProfessionalInBusiness(businessId, professionalId);
+  serviceIds = [...new Set(serviceIds)];
 
   if (serviceIds.length > 0) {
     const { data: svcs, error: svcErr } = await supabaseAdmin
@@ -271,9 +334,7 @@ async function setProfessionalServices(businessId, professionalId, serviceIds) {
       .in('id', serviceIds);
     if (svcErr) throw svcErr;
     if (svcs.length !== serviceIds.length) {
-      const err = new Error('Uno o más servicios no pertenecen a este negocio');
-      err.statusCode = 400;
-      throw err;
+      throw badRequest('Uno o más servicios no pertenecen a este negocio');
     }
   }
 
@@ -297,20 +358,11 @@ async function setProfessionalServices(businessId, professionalId, serviceIds) {
   return serviceIds;
 }
 
-async function getProfessionalServices(professionalId) {
-  const { data, error } = await supabaseAdmin
-    .from('professional_services')
-    .select('service_id, services(id, name, duration_min, price)')
-    .eq('professional_id', professionalId);
-  if (error) throw error;
-  return data.map(r => r.services);
-}
-
 module.exports = {
   listServices, createService, updateService,
   listProfessionals, createProfessional, updateProfessional,
   getSchedules, replaceSchedules,
   updateBusiness,
   listBlocks, createBlock, deleteBlock,
-  getProfessionalServices, setProfessionalServices, getProfessionalServices
+  getProfessionalServices, setProfessionalServices,
 };

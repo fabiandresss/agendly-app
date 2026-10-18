@@ -173,6 +173,7 @@
       .form-panel { padding: 32px 24px; align-items: flex-start; padding-top: 52px; }
     }
   </style>
+  <script src="config.js"></script>
 </head>
 <body>
 
@@ -235,11 +236,11 @@
   </div>
 
   <script>
-    const API = 'http://localhost:3000';
+    const API = AGENDLY_API;
 
     if (sessionStorage.getItem('agendly_token')) {
       const slug = sessionStorage.getItem('agendly_slug');
-      window.location.href = slug ? `app.html?negocio=${slug}` : 'onboarding.html';
+      window.location.href = slug ? `app.html?negocio=${encodeURIComponent(slug)}` : 'onboarding.html';
     }
 
     function togglePw() {

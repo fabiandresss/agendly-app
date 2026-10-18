@@ -1,38 +1,93 @@
 // services/appointment.service.js
 // Lógica de negocio para reservas: validaciones de disponibilidad y creación.
+// Todas las decisiones de calendario se toman en la zona horaria del negocio
+// (ver utils/time.js), no en la del servidor.
 
+const crypto   = require('crypto');
 const supabase = require('../config/supabase');
+const {
+  partsInTz, zonedToUtc, weekdayOf, dayRange, toMinutes,
+} = require('../utils/time');
+
+function httpError(message, statusCode) {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+}
+
+// ─────────────────────────────────────────────────────────
+//  VALIDACIONES DE HORARIO / BLOQUEOS / CONFLICTOS
+// ─────────────────────────────────────────────────────────
 
 /**
- * Verifica que el profesional trabaja ese día y en ese horario.
+ * Devuelve los tramos de trabajo del profesional para un día de la semana.
+ * Puede haber más de un tramo por día (ej: 09-13 y 15-19).
  */
-async function isProfessionalAvailableBySchedule(professionalId, scheduledAt) {
-  const date = new Date(scheduledAt);
-  const dayOfWeek = date.getDay(); // 0=domingo, 1=lunes...
-  
-  // Formato HH:MM para comparar con los horarios guardados
-  const timeStr = date.toTimeString().substring(0, 5);
-
+async function getScheduleRows(professionalId, dayOfWeek) {
   const { data, error } = await supabase
     .from('schedules')
-    .select('id')
+    .select('start_time, end_time')
     .eq('professional_id', professionalId)
     .eq('day_of_week', dayOfWeek)
-    .lte('start_time', timeStr) // start_time <= timeStr
-    .gte('end_time', timeStr)   // end_time >= timeStr
-    .single();
+    .order('start_time');
 
-  if (error && error.code === 'PGRST116') return false; // no hay horario ese día
   if (error) throw error;
-  return !!data;
+  return data ?? [];
+}
+
+/**
+ * Verifica que la reserva [scheduledAt, scheduledAt + durationMin] cabe
+ * COMPLETA dentro de algún tramo de trabajo del profesional.
+ */
+async function isProfessionalAvailableBySchedule(professionalId, scheduledAt, durationMin = 0) {
+  const p    = partsInTz(new Date(scheduledAt));
+  const rows = await getScheduleRows(professionalId, p.weekday);
+
+  const startMin = p.hour * 60 + p.minute;
+  const endMin   = startMin + durationMin;
+
+  return rows.some(r => startMin >= toMinutes(r.start_time) && endMin <= toMinutes(r.end_time));
+}
+
+/**
+ * Busca un bloqueo (feriado, vacaciones…) que afecte al negocio completo o
+ * al profesional en una fecha "YYYY-MM-DD". Retorna el bloqueo o null.
+ */
+async function getBlockForDate(businessId, professionalId, dateStr) {
+  const { data, error } = await supabase
+    .from('blocks')
+    .select('id, name, professional_id')
+    .eq('business_id', businessId)
+    .lte('start_date', dateStr)
+    .gte('end_date', dateStr);
+
+  if (error) throw error;
+  return (data ?? []).find(b => !b.professional_id || b.professional_id === professionalId) ?? null;
+}
+
+/**
+ * ¿El profesional ofrece este servicio?
+ * Sin filas en professional_services se entiende que ofrece todos
+ * (misma regla que usa la disponibilidad y el listado público).
+ */
+async function professionalOffersService(professionalId, serviceId) {
+  const { data, error } = await supabase
+    .from('professional_services')
+    .select('service_id')
+    .eq('professional_id', professionalId);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return true;
+  return data.some(r => r.service_id === serviceId);
 }
 
 /**
  * Verifica que el profesional no tenga otra reserva en ese bloque de tiempo.
  * Detecta solapamientos: si la nueva reserva empieza antes de que termine la anterior.
+ * @param {string} [excludeId] - id de una reserva a ignorar (al reagendar)
  */
-async function hasProfessionalConflict(professionalId, scheduledAt, endsAt) {
-  const { data, error } = await supabase
+async function hasProfessionalConflict(professionalId, scheduledAt, endsAt, excludeId = null) {
+  let query = supabase
     .from('appointments')
     .select('id')
     .eq('professional_id', professionalId)
@@ -41,9 +96,40 @@ async function hasProfessionalConflict(professionalId, scheduledAt, endsAt) {
     .gt('ends_at', scheduledAt)    // la existente termina después de que empieza la nueva
     .limit(1);
 
+  if (excludeId) query = query.neq('id', excludeId);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data.length > 0; // true = hay conflicto
 }
+
+/**
+ * Valida todas las reglas de agenda para una hora solicitada.
+ * Lanza un error con statusCode 409 si algo no se cumple.
+ */
+async function assertSlotBookable({ businessId, professionalId, serviceId, scheduled, durationMin, excludeId = null }) {
+  if (serviceId && !(await professionalOffersService(professionalId, serviceId))) {
+    throw httpError('Este profesional no ofrece ese servicio', 409);
+  }
+
+  const block = await getBlockForDate(businessId, professionalId, partsInTz(scheduled).dateStr);
+  if (block) {
+    throw httpError(`No hay atención ese día (${block.name})`, 409);
+  }
+
+  if (!(await isProfessionalAvailableBySchedule(professionalId, scheduled, durationMin))) {
+    throw httpError('El profesional no trabaja en ese horario', 409);
+  }
+
+  const endsAt = new Date(scheduled.getTime() + durationMin * 60 * 1000);
+  if (await hasProfessionalConflict(professionalId, scheduled.toISOString(), endsAt.toISOString(), excludeId)) {
+    throw httpError('El profesional ya tiene una reserva en ese horario', 409);
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+//  CRUD DE RESERVAS
+// ─────────────────────────────────────────────────────────
 
 /**
  * Crea una nueva reserva.
@@ -68,11 +154,12 @@ async function createAppointment({
       professional_id: professionalId,
       client_name:     clientName,
       client_phone:    clientPhone,
-      client_email:    clientEmail,
+      client_email:    clientEmail || null,
       scheduled_at:    scheduledAt,
       ends_at:         endsAt,
       status:          'pending',
       notes:           notes || null,
+      cancel_token:    crypto.randomUUID(),
     })
     .select() // retorna el registro creado
     .single();
@@ -114,9 +201,7 @@ async function getAppointmentsByBusiness(businessId) {
 async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
   const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
   if (!validStatuses.includes(newStatus)) {
-    const err = new Error(`Estado inválido: ${newStatus}`);
-    err.statusCode = 400;
-    throw err;
+    throw httpError(`Estado inválido: ${newStatus}`, 400);
   }
 
   const { data, error } = await supabase
@@ -128,11 +213,9 @@ async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
     .single();
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      const err = new Error('Reserva no encontrada');
-      err.statusCode = 404;
-      throw err;
-    }
+    if (error.code === 'PGRST116') throw httpError('Reserva no encontrada', 404);
+    // UUID mal formado en la URL
+    if (error.code === '22P02')    throw httpError('Id de reserva inválido', 400);
     throw error;
   }
 
@@ -144,54 +227,23 @@ async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
 // ─────────────────────────────────────────────────────────
 
 /**
- * Obtiene el horario laboral del profesional para un día específico.
- * Retorna null si el profesional no trabaja ese día.
- *
- * @param {string} professionalId - UUID del profesional
- * @param {Date}   date           - Fecha a consultar
- */
-
-async function getProfessionalScheduleForDay(professionalId, date) {
-  // Usar getDay() sobre fecha local es correcto siempre que
-  // el objeto Date se construya con hora local (T12:00:00 sin Z)
-  const dayOfWeek = new Date(date).getDay();
-
-  const { data, error } = await supabase
-    .from('schedules')
-    .select('start_time, end_time')
-    .eq('professional_id', professionalId)
-    .eq('day_of_week', dayOfWeek);
-
-  if (error) throw error;
-
-  // Retornar el primer horario encontrado para ese día
-  // (usamos .select() sin .single() para evitar el error PGRST116)
-  if (!data || data.length === 0) return null;
-  return data[0];
-}
-
-/**
- * Obtiene todas las reservas activas de un profesional para un día.
+ * Obtiene las reservas activas de un profesional para un día.
  * Solo trae reservas pending y confirmed — las canceladas no bloquean slots.
+ * Incluye las que empiezan el día anterior pero se extienden hasta este día.
  *
  * @param {string} professionalId
- * @param {Date}   date           - El día a consultar (hora local)
+ * @param {string} dateStr - "YYYY-MM-DD" (día del negocio)
  */
-
-async function getBookedSlotsForDay(professionalId, date) {
-  const d = new Date(date);
-
-  // Construir inicio y fin del día en hora local
-  const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
-  const dayEnd   = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
+async function getBookedSlotsForDay(professionalId, dateStr) {
+  const { start, end } = dayRange(dateStr);
 
   const { data, error } = await supabase
     .from('appointments')
     .select('scheduled_at, ends_at')
     .eq('professional_id', professionalId)
     .in('status', ['pending', 'confirmed'])
-    .gte('scheduled_at', dayStart.toISOString())
-    .lte('scheduled_at', dayEnd.toISOString());
+    .lt('scheduled_at', end.toISOString())
+    .gt('ends_at', start.toISOString());
 
   if (error) throw error;
 
@@ -205,42 +257,26 @@ async function getBookedSlotsForDay(professionalId, date) {
  * Genera todos los bloques de tiempo candidatos entre apertura y cierre.
  * El último bloque válido es aquel que termina exactamente en o antes del cierre.
  *
- * @param {Date}   baseDate     - El día base
+ * @param {string} dateStr      - Día "YYYY-MM-DD" (zona del negocio)
  * @param {string} startTime    - "HH:MM" hora de inicio (ej: "09:00")
  * @param {string} endTime      - "HH:MM" hora de cierre (ej: "18:00")
  * @param {number} durationMin  - Duración del servicio en minutos
- * @param {number} intervalMin  - Cada cuántos minutos generar un bloque (15 o 30)
+ * @param {number} intervalMin  - Cada cuántos minutos generar un bloque
  * @returns {Array<{start: Date, end: Date, label: string}>}
  */
-function generateCandidateSlots(baseDate, startTime, endTime, durationMin, intervalMin) {
+function generateCandidateSlots(dateStr, startTime, endTime, durationMin, intervalMin) {
   const slots = [];
+  const openMinutes  = toMinutes(startTime);
+  const closeMinutes = toMinutes(endTime);
 
-  // Convertir "HH:MM" a minutos desde medianoche para operar con aritmética simple
-  const [startH, startM] = startTime.split(':').map(Number);
-  const [endH,   endM  ] = endTime.split(':').map(Number);
-  const openMinutes  = startH * 60 + startM;
-  const closeMinutes = endH   * 60 + endM;
-
-  // Iterar desde apertura hasta el último bloque que cabe antes del cierre
   for (let current = openMinutes; current + durationMin <= closeMinutes; current += intervalMin) {
-    const slotStartH = Math.floor(current / 60);
-    const slotStartM = current % 60;
+    const pad   = n => String(n).padStart(2, '0');
+    const label = `${pad(Math.floor(current / 60))}:${pad(current % 60)}`;
 
-    const slotEndMinutes = current + durationMin;
-    const slotEndH = Math.floor(slotEndMinutes / 60);
-    const slotEndM = slotEndMinutes % 60;
+    const start = zonedToUtc(dateStr, label);
+    const end   = new Date(start.getTime() + durationMin * 60 * 1000);
 
-    // Construir objetos Date reales usando la fecha base
-    const slotStart = new Date(baseDate);
-    slotStart.setHours(slotStartH, slotStartM, 0, 0);
-
-    const slotEnd = new Date(baseDate);
-    slotEnd.setHours(slotEndH, slotEndM, 0, 0);
-
-    // Label para la respuesta: "09:00", "09:30", etc.
-    const label = `${String(slotStartH).padStart(2, '0')}:${String(slotStartM).padStart(2, '0')}`;
-
-    slots.push({ start: slotStart, end: slotEnd, label });
+    slots.push({ start, end, label });
   }
 
   return slots;
@@ -254,9 +290,6 @@ function generateCandidateSlots(baseDate, startTime, endTime, durationMin, inter
  *
  * Usamos < estricto (no <=) para permitir reservas consecutivas:
  * una que termina a las 10:00 y otra que empieza a las 10:00 NO se solapan.
- *
- * @param {{start: Date, end: Date}} candidate - Bloque a evaluar
- * @param {Array<{start: Date, end: Date}>} bookedSlots - Reservas existentes
  */
 function hasConflictWithBookings(candidate, bookedSlots) {
   return bookedSlots.some(booked =>
@@ -273,13 +306,9 @@ function hasConflictWithBookings(candidate, bookedSlots) {
  * @param {string} params.professionalId   - UUID del profesional
  * @param {string} params.serviceId        - UUID del servicio
  * @param {string} params.date             - Fecha en formato "YYYY-MM-DD"
- * @param {number} [params.intervalMin=30] - Intervalo entre slots (15 o 30)
- *
- * @returns {{ slots: string[], date: string, unavailable: boolean }}
+ * @param {number} [params.intervalMin]    - Intervalo entre slots (15 o 30)
  */
-
 async function getAvailableSlots({ businessId, professionalId, serviceId, date, intervalMin }) {
-  // 1. Duración del servicio
   const { data: service, error: svcErr } = await supabase
     .from('services')
     .select('duration_min, name')
@@ -289,92 +318,175 @@ async function getAvailableSlots({ businessId, professionalId, serviceId, date, 
     .single();
 
   if (svcErr || !service) {
-    const err = new Error('Servicio no encontrado o inactivo');
-    err.statusCode = 404;
-    throw err;
+    throw httpError('Servicio no encontrado o inactivo', 404);
   }
 
-  // 2. Verificar asignación profesional ↔ servicio
-  // Solo si la tabla tiene datos — si está vacía, permitimos igual
-  const { data: psRows } = await supabase
-    .from('professional_services')
-    .select('service_id')
-    .eq('professional_id', professionalId);
+  const base = { date, service_name: service.name, duration_min: service.duration_min, interval_min: null };
 
-  // Si el profesional tiene servicios asignados, verificar que este esté incluido
-  if (psRows && psRows.length > 0) {
-    const hasService = psRows.some(r => r.service_id === serviceId);
-    if (!hasService) {
-      return {
-        date,
-        available: false,
-        reason:    'Este profesional no ofrece ese servicio',
-        slots:     [],
-      };
-    }
+  if (!(await professionalOffersService(professionalId, serviceId))) {
+    return { ...base, available: false, reason: 'Este profesional no ofrece ese servicio', slots: [] };
   }
-  // Si psRows está vacío asumimos que aún no se han asignado servicios
-  // y no bloqueamos la disponibilidad
 
-  // 3. Construir fecha base en hora local
-  const [year, month, day] = date.split('-').map(Number);
-  const baseDate = new Date(year, month - 1, day, 12, 0, 0);
+  const block = await getBlockForDate(businessId, professionalId, date);
+  if (block) {
+    return { ...base, available: false, reason: `No hay atención este día (${block.name})`, slots: [] };
+  }
 
-  // 4. Horario del profesional ese día
-  const schedule = await getProfessionalScheduleForDay(professionalId, baseDate);
-  if (!schedule) {
-    return {
-      date,
-      available: false,
-      reason:    'El profesional no trabaja este día',
-      slots:     [],
-    };
+  const scheduleRows = await getScheduleRows(professionalId, weekdayOf(date));
+  if (scheduleRows.length === 0) {
+    return { ...base, available: false, reason: 'El profesional no trabaja este día', slots: [] };
   }
 
   const duration = service.duration_min;
   const interval = intervalMin && intervalMin < duration ? intervalMin : duration;
 
-  // 5. Generar candidatos
-  const candidates = generateCandidateSlots(
-    baseDate,
-    schedule.start_time,
-    schedule.end_time,
-    duration,
-    interval
+  const candidates = scheduleRows.flatMap(r =>
+    generateCandidateSlots(date, r.start_time, r.end_time, duration, interval)
   );
 
   if (!candidates.length) {
-    return {
-      date,
-      available: false,
-      reason:    'La duración del servicio no cabe en el horario disponible',
-      slots:     [],
-    };
+    return { ...base, interval_min: interval, available: false, reason: 'La duración del servicio no cabe en el horario disponible', slots: [] };
   }
 
-  // 6. Reservas existentes
-  const bookedSlots = await getBookedSlotsForDay(professionalId, baseDate);
+  const bookedSlots = await getBookedSlotsForDay(professionalId, date);
+  const now = new Date();
 
-  // 7. Filtrar
-  const availableSlots = candidates
-    .filter(c => !hasConflictWithBookings(c, bookedSlots))
-    .map(c => c.label);
+  // Sin horas pasadas (hoy), sin choques con reservas y sin duplicados entre tramos
+  const slots = [...new Set(
+    candidates
+      .filter(c => c.start > now && !hasConflictWithBookings(c, bookedSlots))
+      .map(c => c.label)
+  )].sort();
 
   return {
-    date,
-    available:    availableSlots.length > 0,
-    service_name: service.name,
-    duration_min: duration,
+    ...base,
     interval_min: interval,
-    slots:        availableSlots,
+    available:    slots.length > 0,
+    reason:       slots.length > 0 ? null : 'No quedan horarios disponibles este día',
+    slots,
+  };
+}
+
+// ─────────────────────────────────────────────────────────
+//  CANCELAR / REAGENDAR POR TOKEN
+// ─────────────────────────────────────────────────────────
+
+async function cancelByToken(token) {
+  const { data: appt, error: findErr } = await supabase
+    .from('appointments')
+    .select(`
+      id, status, scheduled_at, client_name, client_phone,
+      businesses(name, phone),
+      services(name),
+      professionals(name)
+    `)
+    .eq('cancel_token', token)
+    .single();
+
+  if (findErr || !appt) {
+    throw httpError('Reserva no encontrada o token inválido', 404);
+  }
+  if (appt.status === 'cancelled') {
+    throw httpError('Esta reserva ya fue cancelada', 409);
+  }
+  if (appt.status === 'completed') {
+    throw httpError('No se puede cancelar una reserva completada', 409);
+  }
+  if (new Date(appt.scheduled_at) < new Date()) {
+    throw httpError('No se puede cancelar una reserva pasada', 409);
+  }
+
+  const { data, error: updateErr } = await supabase
+    .from('appointments')
+    .update({ status: 'cancelled' })
+    .eq('cancel_token', token)
+    .select()
+    .single();
+
+  if (updateErr) throw updateErr;
+
+  // Con los datos relacionados para poder notificar al dueño
+  return { ...data, businesses: appt.businesses, services: appt.services, professionals: appt.professionals };
+}
+
+/**
+ * Reagenda una reserva usando el cancel_token.
+ * @param {Date} scheduled - nueva fecha/hora (ya parseada y válida)
+ */
+async function rescheduleByToken(token, scheduled) {
+  const { data: appt, error: findErr } = await supabase
+    .from('appointments')
+    .select(`
+      id, status, scheduled_at, professional_id, service_id, cancel_token,
+      client_name, client_phone, client_email,
+      businesses(id, name, phone),
+      services(id, name, duration_min),
+      professionals(name)
+    `)
+    .eq('cancel_token', token)
+    .single();
+
+  if (findErr || !appt) {
+    throw httpError('Reserva no encontrada o token inválido', 404);
+  }
+  if (appt.status === 'cancelled') {
+    throw httpError('Esta reserva fue cancelada y no puede reagendarse', 409);
+  }
+  if (appt.status === 'completed') {
+    throw httpError('No se puede reagendar una reserva completada', 409);
+  }
+  if (scheduled < new Date()) {
+    throw httpError('No puedes reagendar en una fecha pasada', 400);
+  }
+
+  const duration = appt.services.duration_min;
+  const endsAt   = new Date(scheduled.getTime() + duration * 60 * 1000);
+
+  // Mismas reglas que una reserva nueva (horario, bloqueos, conflictos),
+  // ignorando la propia reserva.
+  await assertSlotBookable({
+    businessId:     appt.businesses.id,
+    professionalId: appt.professional_id,
+    serviceId:      appt.service_id,
+    scheduled,
+    durationMin:    duration,
+    excludeId:      appt.id,
+  });
+
+  const { data, error: updateErr } = await supabase
+    .from('appointments')
+    .update({
+      scheduled_at:  scheduled.toISOString(),
+      ends_at:       endsAt.toISOString(),
+      status:        'pending',
+      reminder_sent: false, // la nueva fecha necesita su propio recordatorio
+    })
+    .eq('cancel_token', token)
+    .select()
+    .single();
+
+  if (updateErr) throw updateErr;
+
+  // Retornar con datos completos para la notificación
+  return {
+    ...data,
+    businesses:    appt.businesses,
+    services:      appt.services,
+    professionals: appt.professionals,
+    client_name:   appt.client_name,
+    client_phone:  appt.client_phone,
+    client_email:  appt.client_email,
   };
 }
 
 module.exports = {
   isProfessionalAvailableBySchedule,
   hasProfessionalConflict,
+  assertSlotBookable,
   createAppointment,
   getAppointmentsByBusiness,
   updateAppointmentStatus,
-  getAvailableSlots,         // nueva
+  getAvailableSlots,
+  cancelByToken,
+  rescheduleByToken,
 };

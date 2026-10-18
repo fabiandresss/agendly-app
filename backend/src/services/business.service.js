@@ -2,19 +2,31 @@
 // Toda la lógica relacionada con negocios vive aquí.
 // Esta capa NO sabe nada de HTTP: no usa req, res, ni status codes.
 
-const supabase = require('../config/supabase');
+const supabase      = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin');
 
 /**
  * Busca un negocio por su slug público.
  * Retorna null si no existe o está inactivo.
  */
 async function getBusinessBySlug(slug) {
-  const { data, error } = await supabase
+  // Perfil completo (lo usan profile.html y la configuración del panel) y,
+  // si la base aún no tiene las columnas opcionales, solo los campos básicos.
+  const FULL  = 'id, name, slug, business_type, phone, email, address, plan, description, photo_url, instagram, facebook, whatsapp_contact';
+  const BASIC = 'id, name, slug, phone, email, address, plan';
+
+  const query = cols => supabase
     .from('businesses')
-    .select('id, name, slug, phone, email, address, plan')
+    .select(cols)
     .eq('slug', slug)
     .eq('is_active', true)
     .single(); // espera exactamente 1 resultado
+
+  let { data, error } = await query(FULL);
+  if (error && error.code === '42703') { // undefined_column
+    console.warn('[business.service] Faltan columnas opcionales en businesses; usando campos básicos');
+    ({ data, error } = await query(BASIC));
+  }
 
   if (error) {
     // "PGRST116" es el código de Supabase para "0 filas encontradas"
@@ -41,19 +53,31 @@ async function getServicesByBusiness(businessId) {
 }
 
 /**
- * Retorna los profesionales activos de un negocio.
+ * Retorna los profesionales activos que ofrecen un servicio.
+ * Un profesional sin ningún servicio asignado se considera que ofrece todos
+ * (misma regla que usa la disponibilidad), así un negocio recién creado
+ * puede recibir reservas sin configuración extra.
  */
 async function getProfessionalsByService(businessId, serviceId) {
-  const { data, error } = await supabase
+  const professionals = await getProfessionalsByBusiness(businessId);
+  if (professionals.length === 0) return [];
+
+  const { data: links, error } = await supabaseAdmin
     .from('professional_services')
-    .select('professionals!inner(id, name, bio, is_active)')
-    .eq('professionals.business_id', businessId)
-    .eq('professionals.is_active', true)
-    .eq('service_id', serviceId);
+    .select('professional_id, service_id')
+    .in('professional_id', professionals.map(p => p.id));
+
   if (error) throw error;
-  return data.map(r => r.professionals);
+
+  const withAssignments = new Set(links.map(l => l.professional_id));
+  const offering        = new Set(links.filter(l => l.service_id === serviceId).map(l => l.professional_id));
+
+  return professionals.filter(p => !withAssignments.has(p.id) || offering.has(p.id));
 }
 
+/**
+ * Retorna los profesionales activos de un negocio.
+ */
 async function getProfessionalsByBusiness(businessId) {
   const { data, error } = await supabase
     .from('professionals')
@@ -66,33 +90,10 @@ async function getProfessionalsByBusiness(businessId) {
   return data;
 }
 
-/**
- * Asocia un usuario recién registrado con su negocio.
- * Se llama desde el controller de registro.
- */
-async function setBusinessOwner(slug, userId) {
-  const { data, error } = await supabase
-    .from('businesses')
-    .update({ owner_id: userId })
-    .eq('slug', slug)
-    .is('owner_id', null)   // solo si aún no tiene dueño (seguridad)
-    .select()
-    .single();
-
-  if (error || !data) {
-    const err = new Error('No se pudo asociar el negocio. Verifica el slug o que no tenga ya un dueño asignado.');
-    err.statusCode = 400;
-    throw err;
-  }
-
-  return data;
-}
-
 module.exports = {
   getBusinessBySlug,
   getServicesByBusiness,
   getProfessionalsByBusiness,
-  setBusinessOwner,
   getProfessionalsByService,
 };
 

@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reagendar reserva — AGENDLY</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+  <style>
+    body { min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px; }
+    .rcard {
+      background:var(--surface-card);border:1px solid var(--border-default);
+      border-radius:var(--radius-xl);padding:40px 36px;
+      max-width:480px;width:100%;box-shadow:var(--shadow-md);
+    }
+    .logo { font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--brand-primary);display:flex;align-items:center;gap:5px;margin-bottom:28px; }
+    .logo-dot { width:5px;height:5px;border-radius:50%;background:var(--brand-primary-mid); }
+    .appt-detail { background:var(--surface-subtle);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin-bottom:22px;display:flex;flex-direction:column;gap:8px; }
+    .appt-row { display:flex;align-items:center;gap:10px;font-size:13px; }
+    .appt-row i { color:var(--brand-primary);font-size:15px;width:18px;flex-shrink:0; }
+    .appt-label { color:var(--text-muted);width:80px;flex-shrink:0; }
+    .appt-value { font-weight:600; }
+    .slots-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;margin-top:10px; }
+    .slot-btn { padding:8px 6px;border-radius:var(--radius-md);border:1.5px solid var(--border-default);background:var(--surface-card);font-size:13px;font-weight:600;cursor:pointer;transition:all var(--transition-fast);font-family:var(--font-body);text-align:center; }
+    .slot-btn:hover { border-color:var(--brand-primary);color:var(--brand-primary);background:var(--brand-primary-light); }
+    .slot-btn.active { background:var(--brand-primary);border-color:var(--brand-primary);color:white; }
+    .slots-empty { padding:16px;text-align:center;color:var(--text-muted);font-size:13px;background:var(--surface-subtle);border-radius:var(--radius-md);border:1px solid var(--border-default); }
+    .spin { animation:spin 0.7s linear infinite; }
+    .fgroup { display:flex;flex-direction:column;gap:5px;margin-bottom:14px; }
+    .flabel { font-size:13px;font-weight:600; }
+    .icon-state { width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:26px; }
+    .ic-loading { background:var(--brand-primary-light);color:var(--brand-primary); }
+    .ic-success  { background:var(--color-success-light);color:var(--color-success); }
+    .ic-error    { background:var(--color-error-light);color:var(--color-error); }
+    h2 { font-family:var(--font-display);font-size:20px;font-weight:700;margin-bottom:8px; }
+    .desc { font-size:14px;color:var(--text-secondary);line-height:1.65;margin-bottom:22px; }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+<div class="rcard" id="rcard">
+  <div class="logo">AGENDLY<div class="logo-dot"></div></div>
+
+  <!-- Cargando -->
+  <div id="st-loading">
+    <div class="icon-state ic-loading"><i class="ti ti-loader spin"></i></div>
+    <h2 style="text-align:center;">Cargando reserva...</h2>
+  </div>
+
+  <!-- Formulario -->
+  <div id="st-form" style="display:none;">
+    <h2>Reagendar reserva</h2>
+    <p class="desc">Selecciona una nueva fecha y horario. El servicio y profesional se mantienen.</p>
+
+    <div class="appt-detail" id="appt-detail"></div>
+
+    <div class="fgroup">
+      <label class="flabel">Nueva fecha</label>
+      <input type="date" id="new-date" class="form-input" style="max-width:200px;" oninput="loadSlots()"/>
+    </div>
+
+    <div id="slots-wrap" style="display:none;">
+      <label class="flabel" style="font-size:13px;font-weight:600;display:block;margin-bottom:8px;">Horarios disponibles</label>
+      <div id="slots-container"></div>
+    </div>
+
+    <div class="alert alert-error mt-4" id="form-err" style="display:none;"><span id="form-err-txt"></span></div>
+
+    <div style="display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border-default);">
+      <a id="cancel-link" href="#" class="btn btn-secondary">Cancelar reserva</a>
+      <button class="btn btn-primary" style="flex:1;" id="btn-reschedule" disabled onclick="confirmReschedule()">
+        Confirmar nuevo horario
+      </button>
+    </div>
+  </div>
+
+  <!-- Éxito -->
+  <div id="st-success" style="display:none;text-align:center;">
+    <div class="icon-state ic-success"><i class="ti ti-check"></i></div>
+    <h2>¡Reserva reagendada!</h2>
+    <p class="desc">Tu hora fue actualizada. Recibirás confirmación por WhatsApp.</p>
+    <div class="appt-detail" id="success-detail"></div>
+  </div>
+
+  <!-- Error -->
+  <div id="st-error" style="display:none;text-align:center;">
+    <div class="icon-state ic-error"><i class="ti ti-alert-circle"></i></div>
+    <h2 id="err-title">Algo salió mal</h2>
+    <p class="desc" id="err-desc">No pudimos procesar tu solicitud.</p>
+  </div>
+</div>
+
+<script>
+const API   = AGENDLY_API;
+const token = new URLSearchParams(location.search).get('token');
+let apptData    = null;
+let selectedTime = null;
+
+const fmtDate = iso => new Date(iso).toLocaleString('es-CL',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:AGENDLY_TZ});
+const fmtDateShort = iso => new Date(iso).toLocaleString('es-CL',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:AGENDLY_TZ});
+
+function show(name) {
+  ['loading','form','success','error'].forEach(s => {
+    document.getElementById(`st-${s}`).style.display = s === name ? 'block' : 'none';
+  });
+}
+
+function showErr(title, desc) {
+  document.getElementById('err-title').textContent = title;
+  document.getElementById('err-desc').textContent  = desc;
+  show('error');
+}
+
+async function loadSlots() {
+  const date = document.getElementById('new-date').value;
+  if (!date || !apptData) return;
+
+  selectedTime = null;
+  document.getElementById('btn-reschedule').disabled = true;
+  document.getElementById('slots-wrap').style.display = 'block';
+  document.getElementById('slots-container').innerHTML =
+    '<div style="color:var(--text-muted);font-size:13px;display:flex;align-items:center;gap:8px;"><i class="ti ti-loader spin"></i>Buscando horarios...</div>';
+
+  try {
+    const url = new URL(`${API}/api/availability`);
+    url.searchParams.set('businessSlug',   apptData.businesses.slug);
+    url.searchParams.set('professionalId', apptData.professionals.id);
+    url.searchParams.set('serviceId',      apptData.services.id);
+    url.searchParams.set('date',           date);
+
+    const res  = await fetch(url);
+    const json = await res.json();
+
+    if (!json.available || !json.slots?.length) {
+      document.getElementById('slots-container').innerHTML =
+        `<div class="slots-empty">${json.reason ?? 'No hay horarios disponibles para este día.'}</div>`;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'slots-grid';
+    json.slots.forEach(time => {
+      const btn = document.createElement('button');
+      btn.className   = 'slot-btn';
+      btn.textContent = time;
+      btn.onclick = () => {
+        grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedTime = time;
+        document.getElementById('btn-reschedule').disabled = false;
+      };
+      grid.appendChild(btn);
+    });
+    document.getElementById('slots-container').innerHTML = '';
+    document.getElementById('slots-container').appendChild(grid);
+
+  } catch {
+    document.getElementById('slots-container').innerHTML =
+      '<div class="slots-empty">Error al cargar horarios.</div>';
+  }
+}
+
+async function confirmReschedule() {
+  const date = document.getElementById('new-date').value;
+  if (!date || !selectedTime) return;
+
+  const errEl  = document.getElementById('form-err');
+  const btn    = document.getElementById('btn-reschedule');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Reagendando...';
+
+  const scheduledAt = `${date}T${selectedTime}`; // hora del negocio, sin zona
+
+  try {
+    const res  = await fetch(`${API}/api/appointments/reschedule?token=${encodeURIComponent(token)}`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ scheduledAt }),
+    });
+    const json = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('form-err-txt').textContent = json.error;
+      errEl.style.display = 'flex';
+      btn.disabled = false;
+      btn.textContent = 'Confirmar nuevo horario';
+      return;
+    }
+
+    document.getElementById('success-detail').innerHTML = `
+      <div class="appt-row"><i class="ti ti-tools"></i><span class="appt-label">Servicio</span><span class="appt-value">${esc(apptData.services.name)}</span></div>
+      <div class="appt-row"><i class="ti ti-user"></i><span class="appt-label">Profesional</span><span class="appt-value">${esc(apptData.professionals.name)}</span></div>
+      <div class="appt-row"><i class="ti ti-calendar"></i><span class="appt-label">Nueva fecha</span><span class="appt-value">${fmtDateShort(json.data.scheduled_at)}</span></div>`;
+
+    show('success');
+  } catch {
+    document.getElementById('form-err-txt').textContent = 'Error de conexión. Intenta de nuevo.';
+    errEl.style.display = 'flex';
+    btn.disabled = false;
+    btn.textContent = 'Confirmar nuevo horario';
+  }
+}
+
+async function init() {
+  if (!token) { showErr('Token inválido', 'El enlace de reagendamiento no es válido.'); return; }
+
+  try {
+    const res  = await fetch(`${API}/api/appointments/by-token?token=${encodeURIComponent(token)}`);
+    const json = await res.json();
+
+    if (!res.ok) { showErr('Reserva no encontrada', json.error); return; }
+
+    apptData = json.data;
+
+    document.getElementById('appt-detail').innerHTML = `
+      <div class="appt-row"><i class="ti ti-tools"></i><span class="appt-label">Servicio</span><span class="appt-value">${esc(apptData.services.name)}</span></div>
+      <div class="appt-row"><i class="ti ti-user"></i><span class="appt-label">Profesional</span><span class="appt-value">${esc(apptData.professionals.name)}</span></div>
+      <div class="appt-row"><i class="ti ti-calendar"></i><span class="appt-label">Fecha actual</span><span class="appt-value">${fmtDate(apptData.scheduled_at)}</span></div>`;
+
+    document.getElementById('cancel-link').href = `cancel.html?token=${token}`;
+    document.getElementById('new-date').min      = todayLocal();
+
+    show('form');
+  } catch {
+    showErr('Error de conexión', 'No pudimos cargar tu reserva. Intenta más tarde.');
+  }
+}
+
+init();
+</script>
+</body>
+</html>

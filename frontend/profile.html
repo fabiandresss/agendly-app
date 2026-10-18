@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Perfil del negocio — AGENDLY</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+  <style>
+    body { min-height:100vh; background:var(--surface-page); }
+
+    .topbar {
+      background: var(--surface-card);
+      border-bottom: 1px solid var(--border-default);
+      padding: 0 24px;
+      height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .topbar-logo {
+      font-family: var(--font-display);
+      font-size: 17px; font-weight: 700;
+      color: var(--brand-primary);
+      display: flex; align-items: center; gap: 5px;
+      text-decoration: none;
+    }
+    .topbar-logo-dot { width:6px;height:6px;border-radius:50%;background:var(--brand-primary-mid); }
+
+    .hero {
+      background: var(--brand-primary);
+      padding: 48px 24px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content:'';position:absolute;width:500px;height:500px;
+      border-radius:50%;background:rgba(255,255,255,0.05);
+      top:-150px;right:-150px;
+    }
+    .hero::after {
+      content:'';position:absolute;width:300px;height:300px;
+      border-radius:50%;background:rgba(255,255,255,0.05);
+      bottom:-80px;left:-80px;
+    }
+    .biz-photo {
+      width: 96px; height: 96px;
+      border-radius: 50%;
+      border: 4px solid rgba(255,255,255,0.3);
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 36px; font-weight: 700;
+      color: white;
+      margin: 0 auto 16px;
+      position: relative; z-index: 1;
+      overflow: hidden;
+    }
+    .biz-photo img { width:100%;height:100%;object-fit:cover; }
+    .hero h1 {
+      font-family: var(--font-display);
+      font-size: 28px; font-weight: 700;
+      color: white; margin-bottom: 8px;
+      position: relative; z-index: 1;
+    }
+    .hero-type {
+      display: inline-flex;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 3px 12px; border-radius: var(--radius-pill);
+      margin-bottom: 12px;
+      position: relative; z-index: 1;
+    }
+    .hero-desc {
+      color: rgba(255,255,255,0.82);
+      font-size: 15px; line-height: 1.65;
+      max-width: 480px; margin: 0 auto;
+      position: relative; z-index: 1;
+    }
+
+    .content {
+      max-width: 720px;
+      margin: -40px auto 0;
+      padding: 0 20px 80px;
+      position: relative; z-index: 10;
+    }
+
+    .info-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .info-card-title {
+      font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+    .contact-grid { display:flex;flex-direction:column;gap:10px; }
+    .contact-item {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 14px; color: var(--text-secondary);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+    .contact-item:hover { color: var(--brand-primary); }
+    .contact-item i { font-size:17px;color:var(--brand-primary);width:20px;flex-shrink:0; }
+
+    .social-row { display:flex;gap:8px;flex-wrap:wrap; }
+    .social-btn {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-default);
+      background: var(--surface-card);
+      font-size: 13px; font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+    }
+    .social-btn:hover { border-color:var(--brand-primary);color:var(--brand-primary);background:var(--brand-primary-light); }
+    .social-btn i { font-size:16px; }
+
+    .services-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px; }
+    .service-chip {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      font-size: 13px;
+    }
+    .service-chip-name { font-weight:600;color:var(--text-primary);margin-bottom:3px; }
+    .service-chip-meta { font-size:12px;color:var(--text-secondary);display:flex;gap:8px; }
+
+    .cta-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface-card);
+      border-top: 1px solid var(--border-default);
+      padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      z-index: 100;
+      box-shadow: 0 -4px 16px rgba(79,70,229,0.06);
+    }
+    .cta-bar-info { font-size:13px;color:var(--text-secondary); }
+    .cta-bar-name { font-weight:700;color:var(--text-primary);font-size:15px; }
+
+    @media (max-width:600px) {
+      .hero { padding:40px 16px 60px; }
+      .hero h1 { font-size:22px; }
+      .content { padding:0 12px 100px; }
+      .info-card { padding:18px; }
+    }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="#" class="topbar-logo">AGENDLY<div class="topbar-logo-dot"></div></a>
+  <a id="cta-top" href="#" class="btn btn-primary btn-sm">Reservar hora</a>
+</div>
+
+<div class="hero">
+  <div class="biz-photo" id="biz-photo">?</div>
+  <div class="hero-type" id="biz-type" style="display:none;"></div>
+  <h1 id="biz-name">Cargando...</h1>
+  <p class="hero-desc" id="biz-desc"></p>
+</div>
+
+<div class="content">
+
+  <!-- Contacto -->
+  <div class="info-card" id="contact-card" style="display:none;">
+    <div class="info-card-title">Contacto</div>
+    <div class="contact-grid" id="contact-grid"></div>
+  </div>
+
+  <!-- Redes sociales -->
+  <div class="info-card" id="social-card" style="display:none;">
+    <div class="info-card-title">Redes sociales</div>
+    <div class="social-row" id="social-row"></div>
+  </div>
+
+  <!-- Servicios -->
+  <div class="info-card" id="services-card" style="display:none;">
+    <div class="info-card-title">Servicios disponibles</div>
+    <div class="services-grid" id="services-grid"></div>
+  </div>
+
+</div>
+
+<!-- CTA bar sticky -->
+<div class="cta-bar">
+  <div class="cta-bar-info">
+    <div class="cta-bar-name" id="cta-biz-name">—</div>
+    <div>Reserva tu hora online, 24/7</div>
+  </div>
+  <a id="cta-btn" href="#" class="btn btn-primary btn-lg">
+    <i class="ti ti-calendar" style="font-size:15px;"></i>
+    Reservar hora
+  </a>
+</div>
+
+<script>
+const API = AGENDLY_API;
+const fmtCLP = n => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n??0);
+const initials = name => name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+const BIZ_TYPES = {
+  barberia:'Barbería', peluqueria:'Peluquería', estetica:'Estética',
+  spa:'Spa / Masajes', salud:'Salud', otro:'Negocio de servicios'
+};
+
+async function init() {
+  const slug = new URLSearchParams(location.search).get('negocio');
+  if (!slug) { document.getElementById('biz-name').textContent = 'Negocio no especificado'; return; }
+
+  const bookingUrl = `index.html?negocio=${slug}`;
+  document.getElementById('cta-top').href = bookingUrl;
+  document.getElementById('cta-btn').href = bookingUrl;
+
+  try {
+    const [bizRes, svcsRes] = await Promise.all([
+      fetch(`${API}/api/businesses/${slug}`),
+      fetch(`${API}/api/businesses/${slug}/services`),
+    ]);
+
+    if (!bizRes.ok) { window.location.href = '404.html'; return; }
+
+    const biz  = (await bizRes.json()).data;
+    const svcs = (await svcsRes.json()).data ?? [];
+
+    document.title = `${biz.name} — AGENDLY`;
+
+    // Hero
+    const photoEl = document.getElementById('biz-photo');
+    if (biz.photo_url && /^https?:\/\//i.test(biz.photo_url)) {
+      photoEl.innerHTML = `<img src="${esc(biz.photo_url)}" alt="${esc(biz.name)}"/>`;
+    } else {
+      photoEl.textContent = initials(biz.name);
+    }
+
+    document.getElementById('biz-name').textContent = biz.name;
+    document.getElementById('cta-biz-name').textContent = biz.name;
+
+    if (biz.business_type) {
+      const typeEl = document.getElementById('biz-type');
+      typeEl.textContent = BIZ_TYPES[biz.business_type] ?? biz.business_type;
+      typeEl.style.display = 'inline-flex';
+    }
+
+    if (biz.description) {
+      document.getElementById('biz-desc').textContent = biz.description;
+    }
+
+    // Contacto
+    const contactItems = [];
+    if (biz.address) contactItems.push(`<div class="contact-item"><i class="ti ti-map-pin"></i>${esc(biz.address)}</div>`);
+    if (biz.phone)   contactItems.push(`<a class="contact-item" href="tel:${esc(biz.phone.replace(/[^\d+]/g, ''))}"><i class="ti ti-phone"></i>${esc(biz.phone)}</a>`);
+
+    if (contactItems.length) {
+      document.getElementById('contact-grid').innerHTML = contactItems.join('');
+      document.getElementById('contact-card').style.display = 'block';
+    }
+
+    // Redes sociales
+    const socialItems = [];
+    if (biz.instagram)        socialItems.push(`<a class="social-btn" href="https://instagram.com/${encodeURIComponent(biz.instagram.replace('@',''))}" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-instagram"></i>Instagram</a>`);
+    if (biz.facebook)         socialItems.push(`<a class="social-btn" href="${/^https?:\/\//i.test(biz.facebook) ? esc(biz.facebook) : 'https://facebook.com/' + encodeURIComponent(biz.facebook)}" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-facebook"></i>Facebook</a>`);
+    if (biz.whatsapp_contact) socialItems.push(`<a class="social-btn" href="https://wa.me/${biz.whatsapp_contact.replace(/\D/g,'')}" target="_blank" rel="noopener noreferrer"><i class="ti ti-brand-whatsapp"></i>WhatsApp</a>`);
+
+    if (socialItems.length) {
+      document.getElementById('social-row').innerHTML = socialItems.join('');
+      document.getElementById('social-card').style.display = 'block';
+    }
+
+    // Servicios
+    if (svcs.length) {
+      document.getElementById('services-grid').innerHTML = svcs.map(s => `
+        <div class="service-chip">
+          <div class="service-chip-name">${esc(s.name)}</div>
+          <div class="service-chip-meta">
+            <span>${s.duration_min} min</span>
+            <span>${fmtCLP(s.price)}</span>
+          </div>
+        </div>`).join('');
+      document.getElementById('services-card').style.display = 'block';
+    }
+
+  } catch {
+    document.getElementById('biz-name').textContent = 'Error al cargar el negocio';
+  }
+}
+
+init();
+</script>
+</body>
+</html>s

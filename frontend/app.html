@@ -201,6 +201,7 @@
       .main-content { padding: 16px; }
     }
   </style>
+  <script src="config.js"></script>
 </head>
 <body>
 <div class="app-layout">
@@ -422,27 +423,41 @@
             </div>
           </div>
           <div class="stpanel" id="st-business">
-            <div class="cc">
-              <div class="cc-header"><span class="cc-title">Datos del negocio</span></div>
-              <div class="cc-body">
-                <div class="fgroup"><label class="flabel">Nombre del negocio</label><input type="text" id="st-bizname" class="form-input"/></div>
-                <div class="two-col">
-                  <div class="fgroup"><label class="flabel">Teléfono</label><input type="tel" id="st-phone" class="form-input"/></div>
-                  <div class="fgroup"><label class="flabel">Dirección</label><input type="text" id="st-address" class="form-input"/></div>
-                </div>
-                <div class="fgroup">
-                  <label class="flabel">URL de reservas</label>
-                  <input type="text" id="st-slug" class="form-input" disabled style="opacity:.6;"/>
-                  <span style="font-size:11px;color:var(--text-muted);">El slug no puede modificarse</span>
-                </div>
-                <button class="btn btn-primary btn-sm" onclick="saveBiz()">Guardar cambios</button>
-              </div>
-            </div>
-          </div>
+  <div class="cc">
+    <div class="cc-header"><span class="cc-title">Datos del negocio</span></div>
+    <div class="cc-body">
+      <div class="fgroup"><label class="flabel">Nombre del negocio</label><input type="text" id="st-bizname" class="form-input"/></div>
+      <div class="fgroup"><label class="flabel">Descripción</label><textarea id="st-desc" class="form-input" rows="3" style="resize:vertical;" placeholder="Cuéntales a tus clientes qué hace especial a tu negocio..."></textarea></div>
+      <div class="two-col">
+        <div class="fgroup"><label class="flabel">Teléfono</label><input type="tel" id="st-phone" class="form-input"/></div>
+        <div class="fgroup"><label class="flabel">Dirección</label><input type="text" id="st-address" class="form-input"/></div>
+      </div>
+      <div class="fgroup"><label class="flabel">URL de foto (enlace directo a imagen)</label><input type="url" id="st-photo" class="form-input" placeholder="https://ejemplo.com/foto.jpg"/></div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 10px;">Redes sociales</div>
+      <div class="two-col">
+        <div class="fgroup"><label class="flabel">Instagram</label><input type="text" id="st-instagram" class="form-input" placeholder="@tunegocio"/></div>
+        <div class="fgroup"><label class="flabel">Facebook</label><input type="text" id="st-facebook" class="form-input" placeholder="facebook.com/tunegocio"/></div>
+      </div>
+      <div class="fgroup"><label class="flabel">WhatsApp de contacto</label><input type="tel" id="st-wa" class="form-input" placeholder="+56912345678"/></div>
+      <div class="fgroup">
+        <label class="flabel">URL de reservas</label>
+        <input type="text" id="st-slug" class="form-input" disabled style="opacity:.6;"/>
+        <span style="font-size:11px;color:var(--text-muted);">El slug no puede modificarse</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+        <button class="btn btn-primary btn-sm" onclick="saveBiz()">Guardar cambios</button>
+        <a id="profile-link" href="#" target="_blank" class="btn btn-secondary btn-sm">
+          <i class="ti ti-external-link" style="font-size:13px;"></i>Ver perfil público
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
           <div class="stpanel" id="st-security">
             <div class="cc">
               <div class="cc-header"><span class="cc-title">Cambiar contraseña</span></div>
               <div class="cc-body">
+                <div class="fgroup"><label class="flabel">Contraseña actual</label><input type="password" id="st-pwc" class="form-input" autocomplete="current-password"/></div>
                 <div class="fgroup"><label class="flabel">Nueva contraseña</label><input type="password" id="st-pw1" class="form-input" placeholder="Mínimo 8 caracteres"/></div>
                 <div class="fgroup"><label class="flabel">Confirmar contraseña</label><input type="password" id="st-pw2" class="form-input"/></div>
                 <button class="btn btn-primary btn-sm" onclick="chgPw()">Cambiar contraseña</button>
@@ -564,7 +579,7 @@
 <script>
 'use strict';
 
-const API   = 'http://localhost:3000';
+const API   = AGENDLY_API;
 const TOKEN = sessionStorage.getItem('agendly_token');
 const EMAIL = sessionStorage.getItem('agendly_email') ?? '';
 const SLUG  = new URLSearchParams(location.search).get('negocio')
@@ -624,8 +639,9 @@ function refresh() { LOADERS[S.curSection]?.(); }
 
 // ── FORMAT ─────────────────────────────────────────────
 const $CLP  = n => new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(n??0);
-const $DATE = iso => new Date(iso).toLocaleString('es-CL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-const $DS   = iso => new Date(iso).toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'});
+const $DATE = iso => new Date(iso).toLocaleString('es-CL',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:AGENDLY_TZ});
+// Las fechas de bloqueos vienen como 'YYYY-MM-DD': a mediodía para que la zona horaria no las corra un día
+const $DS   = iso => new Date(String(iso).length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'});
 const INIT  = name => name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
 const SL    = {pending:'Pendiente',confirmed:'Confirmada',completed:'Completada',cancelled:'Cancelada'};
 const DAYS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -633,13 +649,30 @@ const sbadge = s => `<span class="sbadge s-${s}">${SL[s]??s}</span>`;
 
 // ── INIT ───────────────────────────────────────────────
 async function init() {
+  // El panel solo es para el dueño: si ?negocio= no es el suyo (o aún no tiene
+  // negocio) lo llevamos donde corresponde en vez de mostrar un panel vacío.
+  try {
+    const r = await fetch(API + '/api/auth/my-business', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    if (r.status === 401) { sessionStorage.clear(); location.href = 'login.html'; return; }
+    if (r.status === 404) { location.href = 'onboarding.html'; return; }
+    if (r.ok) {
+      const mine = (await r.json()).data;
+      if (mine.slug !== SLUG) {
+        sessionStorage.setItem('agendly_slug', mine.slug);
+        location.replace(`app.html?negocio=${encodeURIComponent(mine.slug)}`);
+        return;
+      }
+      sessionStorage.setItem('agendly_slug', mine.slug);
+    }
+  } catch { /* sin conexión: seguimos y los errores se mostrarán abajo */ }
+
   try {
     S.biz = await api(`/api/businesses/${SLUG}`);
     document.getElementById('sb-biz').textContent  = S.biz.name;
     document.getElementById('sb-plan').textContent = (S.biz.plan??'free').toUpperCase();
-    document.getElementById('booking-link').href   = `index.html?negocio=${SLUG}`;
+    document.getElementById('booking-link').href   = `index.html?negocio=${encodeURIComponent(SLUG)}`;
     document.title = `${S.biz.name} — AGENDLY`;
-  } catch {}
+  } catch(e) { toast(e.message, 'error'); }
 
   const email = EMAIL;
   const parts = email.split('@')[0].split(/[._-]/);
@@ -672,7 +705,8 @@ async function loadDash() {
     renderPeriodChart(period);
     renderTopPros(topPros);
     renderHourly(hourly);
-    renderRecent(await api(`/api/businesses/${SLUG}/appointments`).then(d => d.slice(0,6)));
+    renderRecent(await api(`/api/businesses/${SLUG}/appointments`)
+      .then(d => [...d].sort((a, b) => b.scheduled_at.localeCompare(a.scheduled_at)).slice(0, 6)));
     const p = sum.pending ?? 0;
     const pb = document.getElementById('pbadge');
     pb.textContent = p; pb.style.display = p > 0 ? 'inline-flex' : 'none';
@@ -680,7 +714,7 @@ async function loadDash() {
 }
 
 function renderMetrics(s) {
-  const clpShort = n => n >= 1000000 ? `$${(n/1000).toFixed(0)}k` : $CLP(n);
+  const clpShort = n => n >= 1000000 ? `$${(n/1000000).toFixed(1)}M` : $CLP(n);
   document.getElementById('d-metrics').innerHTML = `
     <div class="metric-card">
       <div class="metric-icon" style="background:var(--brand-primary-light);color:var(--brand-primary);"><i class="ti ti-calendar"></i></div>
@@ -728,7 +762,7 @@ function renderTopSvcs(svcs) {
     <div class="top-svc-row">
       <div class="top-svc-rank">${i+1}</div>
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${s.name}</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${esc(s.name)}</div>
         <div style="height:4px;background:var(--border-default);border-radius:2px;">
           <div class="top-svc-bar" style="width:${Math.round(s.count/max*100)}%;"></div>
         </div>
@@ -747,7 +781,7 @@ function renderTopPros(pros) {
     <div class="top-svc-row">
       <div class="top-svc-rank">${i+1}</div>
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${p.name}</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:3px;">${esc(p.name)}</div>
         <div style="font-size:11px;color:var(--text-muted);">${p.completed} completadas · ${$CLP(p.revenue)}</div>
         <div style="height:4px;background:var(--border-default);border-radius:2px;margin-top:3px;">
           <div class="top-svc-bar" style="width:${Math.round(p.revenue/maxRev*100)}%;background:#7c3aed;"></div>
@@ -791,8 +825,8 @@ function renderRecent(appts) {
   if (!appts.length) { tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Sin reservas aún</td></tr>'; return; }
   tb.innerHTML = appts.map(a=>`
     <tr>
-      <td><div style="font-weight:600;">${a.client_name}</div><div style="font-size:11px;color:var(--text-muted);">${a.client_phone}</div></td>
-      <td>${a.services?.name??'—'}</td>
+      <td><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
+      <td>${esc(a.services?.name??'—')}</td>
       <td style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
       <td>${sbadge(a.status)}</td>
     </tr>`).join('');
@@ -803,7 +837,7 @@ function renderRecent(appts) {
 // ════════════════════════════════════
 async function loadAppts() {
   try { S.appts = await api(`/api/businesses/${SLUG}/appointments`); applyApptF(); }
-  catch(e) { document.getElementById('appts-body').innerHTML=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-error);">${e.message}</td></tr>`; }
+  catch(e) { document.getElementById('appts-body').innerHTML=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--color-error);">${esc(e.message)}</td></tr>`; }
 }
 
 function fAppt(f, btn) {
@@ -827,8 +861,8 @@ function renderAppts(appts) {
   tb.innerHTML = appts.map(a => {
     const cc=a.status==='pending', ck=a.status==='confirmed', ca=a.status==='pending'||a.status==='confirmed';
     return `<tr>
-      <td><div style="font-weight:600;">${a.client_name}</div><div style="font-size:11px;color:var(--text-muted);">${a.client_phone}</div></td>
-      <td>${a.services?.name??'—'}</td><td>${a.professionals?.name??'—'}</td>
+      <td><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
+      <td>${esc(a.services?.name??'—')}</td><td>${esc(a.professionals?.name??'—')}</td>
       <td style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
       <td>${sbadge(a.status)}</td>
       <td><div class="tactions">
@@ -854,7 +888,7 @@ async function chStatus(id, ns) {
 //  SERVICIOS
 // ════════════════════════════════════
 async function loadSvcs() {
-  try { S.svcs = await api(`/api/admin/${SLUG}/services`); renderSvcs(S.svcs); } catch {}
+  try { S.svcs = await api(`/api/admin/${SLUG}/services`); renderSvcs(S.svcs); } catch(e) { toast(e.message,'error'); }
 }
 
 function renderSvcs(svcs) {
@@ -863,16 +897,16 @@ function renderSvcs(svcs) {
   g.innerHTML = svcs.map(s=>`
     <div class="mcard">
       <div class="mcard-top">
-        <div class="mcard-name">${s.name}</div>
+        <div class="mcard-name">${esc(s.name)}</div>
         <span class="badge ${s.is_active?'badge-success':'badge-neutral'}">${s.is_active?'Activo':'Inactivo'}</span>
       </div>
-      ${s.description?`<div style="font-size:12px;color:var(--text-secondary);">${s.description}</div>`:''}
+      ${s.description?`<div style="font-size:12px;color:var(--text-secondary);">${esc(s.description)}</div>`:''}
       <div class="mcard-meta">
         <span><i class="ti ti-clock" style="font-size:13px;"></i>${s.duration_min} min</span>
         <span><i class="ti ti-currency-dollar" style="font-size:13px;"></i>${$CLP(s.price)}</span>
       </div>
       <div class="mcard-actions">
-        <button class="btn btn-sm btn-secondary" onclick='editSvc(${JSON.stringify(s)})'><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+        <button class="btn btn-sm btn-secondary" onclick="editSvc('${s.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
         <button class="btn btn-sm ${s.is_active?'btn-danger':'btn-secondary'}" onclick="toggleSvc('${s.id}',${!s.is_active})">${s.is_active?'Desactivar':'Activar'}</button>
       </div>
     </div>`).join('');
@@ -884,7 +918,8 @@ function openSvcModal() {
   document.getElementById('m-svc-title').textContent='Nuevo servicio';
   openM('service');
 }
-function editSvc(s) {
+function editSvc(id) {
+  const s = S.svcs.find(x => x.id === id); if (!s) return;
   document.getElementById('svc-id').value    = s.id;
   document.getElementById('svc-name').value  = s.name;
   document.getElementById('svc-desc').value  = s.description??'';
@@ -924,7 +959,7 @@ async function toggleSvc(id, state) {
 //  PROFESIONALES
 // ════════════════════════════════════
 async function loadPros() {
-  try { S.pros = await api(`/api/admin/${SLUG}/professionals`); renderPros(S.pros); } catch {}
+  try { S.pros = await api(`/api/admin/${SLUG}/professionals`); renderPros(S.pros); } catch(e) { toast(e.message,'error'); }
 }
 
 function renderPros(pros) {
@@ -934,19 +969,19 @@ function renderPros(pros) {
     <div class="mcard">
       <div class="mcard-top">
         <div style="display:flex;align-items:center;gap:9px;">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--brand-primary-light);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">${INIT(p.name)}</div>
-          <div><div class="mcard-name">${p.name}</div>${p.bio?`<div style="font-size:11px;color:var(--text-muted);">${p.bio}</div>`:''}</div>
+          <div style="width:36px;height:36px;border-radius:50%;background:var(--brand-primary-light);color:var(--brand-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">${esc(INIT(p.name))}</div>
+          <div><div class="mcard-name">${esc(p.name)}</div>${p.bio?`<div style="font-size:11px;color:var(--text-muted);">${esc(p.bio)}</div>`:''}</div>
         </div>
         <span class="badge ${p.is_active?'badge-success':'badge-neutral'}">${p.is_active?'Activo':'Inactivo'}</span>
       </div>
       <div class="mcard-meta">
-        ${p.email?`<span><i class="ti ti-mail" style="font-size:12px;"></i>${p.email}</span>`:''}
-        ${p.phone?`<span><i class="ti ti-phone" style="font-size:12px;"></i>${p.phone}</span>`:''}
+        ${p.email?`<span><i class="ti ti-mail" style="font-size:12px;"></i>${esc(p.email)}</span>`:''}
+        ${p.phone?`<span><i class="ti ti-phone" style="font-size:12px;"></i>${esc(p.phone)}</span>`:''}
       </div>
 <div class="mcard-actions" style="flex-wrap:wrap;gap:5px;">
-  <button class="btn btn-sm btn-secondary" onclick='editPro(${JSON.stringify(p)})'><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
-  <button class="btn btn-sm btn-secondary" onclick="openProSvcsModal('${p.id}','${p.name}')"><i class="ti ti-tools" style="font-size:12px;"></i>Servicios</button>
-  <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}','${p.name}')"><i class="ti ti-clock" style="font-size:12px;"></i>Horarios</button>
+  <button class="btn btn-sm btn-secondary" onclick="editPro('${p.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+  <button class="btn btn-sm btn-secondary" onclick="openProSvcsModal('${p.id}')"><i class="ti ti-tools" style="font-size:12px;"></i>Servicios</button>
+  <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}')"><i class="ti ti-clock" style="font-size:12px;"></i>Horarios</button>
   <button class="btn btn-sm ${p.is_active?'btn-danger':'btn-secondary'}" onclick="togglePro('${p.id}',${!p.is_active})">${p.is_active?'Desactivar':'Activar'}</button>
 </div>
     </div>`).join('');
@@ -958,7 +993,8 @@ function openProModal() {
   document.getElementById('m-pro-title').textContent='Nuevo profesional';
   openM('professional');
 }
-function editPro(p) {
+function editPro(id) {
+  const p = S.pros.find(x => x.id === id); if (!p) return;
   document.getElementById('pro-id').value    = p.id;
   document.getElementById('pro-name').value  = p.name;
   document.getElementById('pro-email').value = p.email??'';
@@ -1005,9 +1041,9 @@ async function loadScheds() {
       const m={}; s.forEach(x=>m[x.day_of_week]=x);
       return `<div class="sched-card">
         <div class="sched-head">
-          <div class="sched-avatar">${INIT(p.name)}</div>
-          <div style="flex:1;"><div style="font-weight:600;font-size:13px;">${p.name}</div><div style="font-size:11px;color:var(--text-secondary);">${s.length} días activos</div></div>
-          <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}','${p.name}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
+          <div class="sched-avatar">${esc(INIT(p.name))}</div>
+          <div style="flex:1;"><div style="font-weight:600;font-size:13px;">${esc(p.name)}</div><div style="font-size:11px;color:var(--text-secondary);">${s.length} días activos</div></div>
+          <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
         </div>
         <div class="sched-days">
           ${[1,2,3,4,5,6,0].map(d=>`
@@ -1019,10 +1055,11 @@ async function loadScheds() {
         </div>
       </div>`;
     }).join('');
-  } catch {}
+  } catch(e) { toast(e.message,'error'); }
 }
 
-async function openSchedModal(proId, proName) {
+async function openSchedModal(proId) {
+  const proName = S.pros.find(x => x.id === proId)?.name ?? '';
   S.schedProId = proId;
   document.getElementById('m-sched-title').textContent = `Horarios — ${proName}`;
   let ex = {};
@@ -1066,12 +1103,12 @@ async function saveSched() {
 //  BLOQUEOS
 // ════════════════════════════════════
 async function loadBlocks() {
-  const today=new Date().toISOString().split('T')[0];
+  const today=todayLocal();
   document.getElementById('blk-start').min = today;
   document.getElementById('blk-end').min   = today;
   if (!S.pros.length) try { S.pros=await api(`/api/admin/${SLUG}/professionals`); } catch {}
   document.getElementById('blk-pro').innerHTML = '<option value="">Todo el negocio</option>' +
-    S.pros.filter(p=>p.is_active).map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    S.pros.filter(p=>p.is_active).map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
   try { S.blocks=await api(`/api/admin/${SLUG}/blocks`); renderBlocks(S.blocks); }
   catch { renderBlocks([]); }
 }
@@ -1083,7 +1120,7 @@ function renderBlocks(blocks) {
     <div class="bitem">
       <div class="bicon"><i class="ti ti-calendar-off"></i></div>
       <div style="flex:1;">
-        <div style="font-weight:600;font-size:14px;">${b.name}</div>
+        <div style="font-weight:600;font-size:14px;">${esc(b.name)}</div>
         <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${$DS(b.start_date)} → ${$DS(b.end_date)}${b.professional_id?' · Un profesional':' · Todo el negocio'}</div>
       </div>
       <button class="btn btn-sm btn-danger" onclick="delBlock('${b.id}')"><i class="ti ti-trash" style="font-size:13px;"></i></button>
@@ -1126,20 +1163,21 @@ async function loadClients() {
     if (!cls.length) { g.innerHTML=`<div class="empty" style="grid-column:1/-1;"><i class="ti ti-users-group"></i><h3>Sin clientes aún</h3><p>Aparecerán cuando lleguen reservas</p></div>`; return; }
     g.innerHTML = cls.map(c=>`
       <div class="ccard">
-        <div class="cavatar">${INIT(c.name)}</div>
+        <div class="cavatar">${esc(INIT(c.name))}</div>
         <div>
-          <div style="font-weight:600;font-size:13px;">${c.name}</div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-top:1px;">${c.phone}${c.email?` · ${c.email}`:''}</div>
+          <div style="font-weight:600;font-size:13px;">${esc(c.name)}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-top:1px;">${esc(c.phone)}${c.email?` · ${esc(c.email)}`:''}</div>
           <div style="margin-top:4px;"><span class="badge badge-primary">${c.count} reserva${c.count!==1?'s':''}</span></div>
         </div>
       </div>`).join('');
-  } catch {}
+  } catch(e) { toast(e.message,'error'); }
 }
 
 // ── SERVICIOS POR PROFESIONAL ──────────────────────────
 let proSvcsEditing = null;
 
-async function openProSvcsModal(proId, proName) {
+async function openProSvcsModal(proId) {
+  const proName = S.pros.find(x => x.id === proId)?.name ?? '';
   proSvcsEditing = proId;
   document.getElementById('m-prosvcs-title').textContent = `Servicios — ${proName}`;
   document.getElementById('prosvcs-err').classList.remove('visible');
@@ -1169,7 +1207,7 @@ async function openProSvcsModal(proId, proName) {
              style="accent-color:var(--brand-primary);width:15px;height:15px;flex-shrink:0;"
              onchange="this.closest('label').style.borderColor=this.checked?'var(--brand-primary)':'var(--border-default)'"/>
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:600;">${s.name}</div>
+        <div style="font-size:13px;font-weight:600;">${esc(s.name)}</div>
         <div style="font-size:11px;color:var(--text-secondary);">${s.duration_min} min · ${$CLP(s.price)}</div>
       </div>
     </label>`).join('');
@@ -1209,34 +1247,58 @@ async function saveProSvcs() {
 //  CONFIGURACIÓN
 // ════════════════════════════════════
 function loadSettings() {
-  document.getElementById('st-email').value = EMAIL;
+  document.getElementById('st-email').value    = EMAIL;
   if (S.biz) {
-    document.getElementById('st-bizname').value = S.biz.name??'';
-    document.getElementById('st-phone').value   = S.biz.phone??'';
-    document.getElementById('st-address').value = S.biz.address??'';
-    document.getElementById('st-slug').value    = S.biz.slug??'';
+    document.getElementById('st-bizname').value  = S.biz.name        ?? '';
+    document.getElementById('st-desc').value     = S.biz.description  ?? '';
+    document.getElementById('st-phone').value    = S.biz.phone        ?? '';
+    document.getElementById('st-address').value  = S.biz.address      ?? '';
+    document.getElementById('st-photo').value    = S.biz.photo_url    ?? '';
+    document.getElementById('st-instagram').value= S.biz.instagram    ?? '';
+    document.getElementById('st-facebook').value = S.biz.facebook     ?? '';
+    document.getElementById('st-wa').value       = S.biz.whatsapp_contact ?? '';
+    document.getElementById('st-slug').value     = S.biz.slug         ?? '';
+    document.getElementById('profile-link').href = `profile.html?negocio=${S.biz.slug}`;
   }
 }
+
 function showSt(panel, btn) {
   document.querySelectorAll('.stnav-item').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
   document.querySelectorAll('.stpanel').forEach(p=>p.classList.remove('active'));
   document.getElementById(`st-${panel}`).classList.add('active');
 }
 async function saveBiz() {
-  const name=document.getElementById('st-bizname').value.trim();
-  if (!name) { toast('El nombre es requerido','error'); return; }
+  const name = document.getElementById('st-bizname').value.trim();
+  if (!name) { toast('El nombre es requerido', 'error'); return; }
   try {
-    await api(`/api/admin/${SLUG}/business`,{method:'PATCH',body:JSON.stringify({name,phone:document.getElementById('st-phone').value.trim(),address:document.getElementById('st-address').value.trim()})});
-    if (S.biz) { S.biz.name=name; document.getElementById('sb-biz').textContent=name; }
-    toast('Negocio actualizado','success');
-  } catch(e){ toast(e.message,'error'); }
+    const updated = await api(`/api/admin/${SLUG}/business`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name,
+        description:       document.getElementById('st-desc').value.trim()      || null,
+        phone:             document.getElementById('st-phone').value.trim()     || null,
+        address:           document.getElementById('st-address').value.trim()   || null,
+        photo_url:         document.getElementById('st-photo').value.trim()     || null,
+        instagram:         document.getElementById('st-instagram').value.trim() || null,
+        facebook:          document.getElementById('st-facebook').value.trim()  || null,
+        whatsapp_contact:  document.getElementById('st-wa').value.trim()        || null,
+      }),
+    });
+    if (S.biz) { Object.assign(S.biz, updated); document.getElementById('sb-biz').textContent = name; }
+    toast('Negocio actualizado', 'success');
+  } catch(e){ toast(e.message, 'error'); }
 }
-function chgPw() {
+async function chgPw() {
+  const cur=document.getElementById('st-pwc').value;
   const p1=document.getElementById('st-pw1').value, p2=document.getElementById('st-pw2').value;
+  if (!cur) { toast('Ingresa tu contraseña actual','error'); return; }
   if (!p1||p1.length<8) { toast('Mínimo 8 caracteres','error'); return; }
   if (p1!==p2) { toast('Las contraseñas no coinciden','error'); return; }
-  toast('Contraseña actualizada','success');
-  document.getElementById('st-pw1').value=''; document.getElementById('st-pw2').value='';
+  try {
+    await api('/api/auth/change-password',{ method:'POST', body:JSON.stringify({ currentPassword:cur, newPassword:p1 }) });
+    toast('Contraseña actualizada','success');
+    ['st-pwc','st-pw1','st-pw2'].forEach(id=>document.getElementById(id).value='');
+  } catch(e){ toast(e.message,'error'); }
 }
 function logout() { if (!confirm('¿Cerrar sesión?')) return; sessionStorage.clear(); location.href='login.html'; }
 

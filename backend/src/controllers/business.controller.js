@@ -64,7 +64,7 @@ async function getProfessionalsByService(req, res) {
     res.json({ data });
   } catch (err) {
     console.error('[business.controller] getProfessionalsByService:', err.message);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: 'Error al obtener los profesionales' });
   }
 }
 

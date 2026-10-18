@@ -1,14 +1,14 @@
+'use strict';
 const express = require('express');
 const router  = express.Router();
-const appointmentController = require('../controllers/appointment.controller');
+const ctrl    = require('../controllers/appointment.controller');
+const auth    = require('../middleware/auth.middleware');
+const { bookingLimiter, cancelLimiter, publicLimiter } = require('../middleware/rateLimiter');
 
-// POST   /api/appointments              — crear reserva
-router.post('/', appointmentController.createAppointment);
-
-// GET    /api/businesses/:slug/appointments — listar reservas del negocio
-// (esta ruta se registra desde business.routes.js, ver abajo)
-
-// PATCH  /api/appointments/:id/status   — cambiar estado
-router.patch('/:id/status', appointmentController.updateStatus);
+router.get('/by-token',      publicLimiter, ctrl.getByToken);
+router.post('/cancel',       cancelLimiter, ctrl.cancelByToken);
+router.post('/reschedule',   cancelLimiter, ctrl.rescheduleByToken);
+router.post('/',             bookingLimiter, ctrl.createAppointment);
+router.patch('/:id/status',  auth, ctrl.updateStatus);
 
 module.exports = router;

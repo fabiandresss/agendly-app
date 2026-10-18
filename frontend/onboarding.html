@@ -189,6 +189,7 @@
       .step-label { display: none; }
     }
   </style>
+  <script src="config.js"></script>
 </head>
 <body>
 
@@ -359,7 +360,7 @@
   </div><!-- /wizard-card -->
 
   <script>
-    const API   = 'http://localhost:3000';
+    const API   = AGENDLY_API;
     const TOKEN = sessionStorage.getItem('agendly_token');
 
     if (!TOKEN) window.location.href = 'login.html';
@@ -535,7 +536,7 @@
           <div class="form-group" style="grid-column:1/-1">
             <label class="form-label">Nombre del servicio *</label>
             <input type="text" class="form-input svc-name" placeholder="Corte de cabello"
-                   value="${data.name || ''}"/>
+                   value="${esc(data.name || '')}"/>
           </div>
           <div class="form-group">
             <label class="form-label">Duración (min)</label>
@@ -548,7 +549,7 @@
           <div class="form-group" style="grid-column:1/-1">
             <label class="form-label">Descripción</label>
             <input type="text" class="form-input svc-desc" placeholder="Descripción opcional"
-                   value="${data.description || ''}"/>
+                   value="${esc(data.description || '')}"/>
           </div>
         </div>`;
       document.getElementById('services-list').appendChild(div);
@@ -576,17 +577,17 @@
           <div class="form-group" style="grid-column:1/-1">
             <label class="form-label">Nombre *</label>
             <input type="text" class="form-input pro-name" placeholder="Antonio García"
-                   value="${data.name || ''}"/>
+                   value="${esc(data.name || '')}"/>
           </div>
           <div class="form-group">
             <label class="form-label">Email</label>
             <input type="email" class="form-input pro-email" placeholder="antonio@email.com"
-                   value="${data.email || ''}"/>
+                   value="${esc(data.email || '')}"/>
           </div>
           <div class="form-group">
             <label class="form-label">Teléfono</label>
             <input type="tel" class="form-input pro-phone" placeholder="+56912345678"
-                   value="${data.phone || ''}"/>
+                   value="${esc(data.phone || '')}"/>
           </div>
         </div>`;
       document.getElementById('professionals-list').appendChild(div);
@@ -617,9 +618,9 @@
         <div class="summary-section">
           <h4>Tu negocio</h4>
           <div class="summary-list">
-            <div class="summary-item"><div class="summary-dot"></div>${state.bizName}</div>
-            <div class="summary-item"><div class="summary-dot"></div>agendly.app/${state.bizSlug}</div>
-            ${state.bizPhone ? `<div class="summary-item"><div class="summary-dot"></div>${state.bizPhone}</div>` : ''}
+            <div class="summary-item"><div class="summary-dot"></div>${esc(state.bizName)}</div>
+            <div class="summary-item"><div class="summary-dot"></div>agendly.app/${esc(state.bizSlug)}</div>
+            ${state.bizPhone ? `<div class="summary-item"><div class="summary-dot"></div>${esc(state.bizPhone)}</div>` : ''}
           </div>
         </div>
         <div class="summary-section">
@@ -628,7 +629,7 @@
             ${services.map(s => `
               <div class="summary-item">
                 <div class="summary-dot"></div>
-                <span>${s.name}</span>
+                <span>${esc(s.name)}</span>
                 <span style="margin-left:auto;color:var(--text-secondary);font-size:13px;">${s.duration_min}min · ${fmtCLP(s.price)}</span>
               </div>`).join('')}
           </div>
@@ -637,7 +638,7 @@
           <h4>Equipo (${professionals.length})</h4>
           <div class="summary-list">
             ${professionals.map(p => `
-              <div class="summary-item"><div class="summary-dot"></div>${p.name}</div>`).join('')}
+              <div class="summary-item"><div class="summary-dot"></div>${esc(p.name)}</div>`).join('')}
           </div>
         </div>`;
     }

@@ -1,18 +1,15 @@
+'use strict';
 const express = require('express');
 const router  = express.Router();
 const businessController    = require('../controllers/business.controller');
 const appointmentController = require('../controllers/appointment.controller');
-const authMiddleware         = require('../middleware/auth.middleware');
+const authMiddleware        = require('../middleware/auth.middleware');
+const { publicLimiter }     = require('../middleware/rateLimiter');
 
-// Rutas públicas — no requieren autenticación
-router.get('/:slug',               businessController.getBusinessBySlug);
-router.get('/:slug/services',      businessController.getServices);
-router.get('/:slug/professionals', businessController.getProfessionals);
-
-// Rutas protegidas — requieren JWT válido
-router.get('/:slug/appointments', authMiddleware, appointmentController.getAppointments);
-
-// Profesionales por servicio (público — para el formulario de reservas)
-router.get('/:slug/services/:serviceId/professionals', businessController.getProfessionalsByService);
+router.get('/:slug',               publicLimiter, businessController.getBusinessBySlug);
+router.get('/:slug/services',      publicLimiter, businessController.getServices);
+router.get('/:slug/professionals', publicLimiter, businessController.getProfessionals);
+router.get('/:slug/services/:serviceId/professionals', publicLimiter, businessController.getProfessionalsByService);
+router.get('/:slug/appointments',  authMiddleware, appointmentController.getAppointments);
 
 module.exports = router;

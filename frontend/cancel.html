@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cancelar reserva — AGENDLY</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .cancel-card {
+      background: var(--surface-card);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+    .cancel-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 28px;
+    }
+    .cancel-icon.warning  { background: var(--color-warning-light); color: var(--color-warning); }
+    .cancel-icon.success  { background: var(--color-success-light); color: var(--color-success); }
+    .cancel-icon.error    { background: var(--color-error-light);   color: var(--color-error); }
+    .cancel-icon.loading  { background: var(--brand-primary-light); color: var(--brand-primary); }
+    .cancel-title {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .cancel-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+    .appt-detail {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      text-align: left;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .appt-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .appt-row i { color: var(--brand-primary); font-size:15px; width:18px; flex-shrink:0; }
+    .appt-row-label { color: var(--text-muted); width: 80px; flex-shrink: 0; }
+    .appt-row-value { font-weight: 600; }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--brand-primary);
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    .logo-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand-primary-mid); }
+    .spin { animation: spin 0.7s linear infinite; }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+
+  <div class="cancel-card" id="cancel-card">
+    <div class="logo">AGENDLY<div class="logo-dot"></div></div>
+
+    <!-- Estado: cargando -->
+    <div id="state-loading">
+      <div class="cancel-icon loading">
+        <i class="ti ti-loader spin"></i>
+      </div>
+      <div class="cancel-title">Verificando reserva...</div>
+      <div class="cancel-desc">Por favor espera un momento.</div>
+    </div>
+
+    <!-- Estado: confirmar cancelación -->
+    <div id="state-confirm" style="display:none;">
+      <div class="cancel-icon warning">
+        <i class="ti ti-calendar-x"></i>
+      </div>
+      <div class="cancel-title">¿Cancelar tu reserva?</div>
+      <div class="cancel-desc">Estás a punto de cancelar la siguiente cita. Esta acción no se puede deshacer.</div>
+      <div class="appt-detail" id="appt-detail"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+  <a id="reschedule-link" href="#" class="btn btn-secondary">
+    <i class="ti ti-calendar-event" style="font-size:14px;"></i>
+    Reagendar
+  </a>
+  <button class="btn btn-danger btn-lg" id="btn-confirm-cancel" onclick="confirmCancel()">
+    Sí, cancelar reserva
+  </button>
+</div>
+    </div>
+
+    <!-- Estado: cancelada exitosamente -->
+    <div id="state-success" style="display:none;">
+      <div class="cancel-icon success">
+        <i class="ti ti-check"></i>
+      </div>
+      <div class="cancel-title">Reserva cancelada</div>
+      <div class="cancel-desc">
+        Tu reserva ha sido cancelada correctamente.<br/>
+        Si deseas reagendar, visita la página del negocio.
+      </div>
+      <a id="back-link" href="#" class="btn btn-secondary" style="margin-top:16px;">
+        <i class="ti ti-calendar-plus" style="font-size:14px;"></i>
+        Reservar otra hora
+      </a>
+    </div>
+
+    <!-- Estado: error -->
+    <div id="state-error" style="display:none;">
+      <div class="cancel-icon error">
+        <i class="ti ti-alert-circle"></i>
+      </div>
+      <div class="cancel-title" id="error-title">Algo salió mal</div>
+      <div class="cancel-desc" id="error-desc">No pudimos procesar tu solicitud.</div>
+    </div>
+  </div>
+
+  <script>
+    const API   = AGENDLY_API;
+    const token = new URLSearchParams(location.search).get('token');
+
+    const fmtDate = iso => new Date(iso).toLocaleString('es-CL', {
+      weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', timeZone: AGENDLY_TZ
+    });
+
+    function showState(name) {
+      ['loading','confirm','success','error'].forEach(s => {
+        document.getElementById(`state-${s}`).style.display = s === name ? 'block' : 'none';
+      });
+    }
+
+    function showError(title, desc) {
+      document.getElementById('error-title').textContent = title;
+      document.getElementById('error-desc').textContent  = desc;
+      showState('error');
+    }
+
+    async function confirmCancel() {
+      const btn = document.getElementById('btn-confirm-cancel');
+      btn.disabled    = true;
+      btn.textContent = 'Cancelando...';
+
+      try {
+        const res  = await fetch(`${API}/api/appointments/cancel?token=${encodeURIComponent(token)}`, {
+          method: 'POST',
+        });
+        const json = await res.json();
+
+        if (!res.ok) {
+          showError('No se pudo cancelar', json.error || 'Error inesperado');
+          return;
+        }
+
+        showState('success');
+      } catch {
+        showError('Error de conexión', 'No pudimos conectar con el servidor. Intenta más tarde.');
+      }
+    }
+
+    async function init() {
+      if (!token) {
+        showError('Token inválido', 'El enlace de cancelación no es válido.');
+        return;
+      }
+
+      // Buscar la reserva por token para mostrar los detalles antes de cancelar
+      try {
+        const res  = await fetch(`${API}/api/appointments/by-token?token=${encodeURIComponent(token)}`);
+        const json = await res.json();
+
+        if (!res.ok) {
+          showError('Reserva no encontrada', json.error || 'El enlace puede haber expirado o ya fue usado.');
+          return;
+        }
+
+        const appt = json.data;
+
+        // Mostrar detalles
+        document.getElementById('appt-detail').innerHTML = `
+          <div class="appt-row">
+            <i class="ti ti-tools"></i>
+            <span class="appt-row-label">Servicio</span>
+            <span class="appt-row-value">${esc(appt.services?.name ?? '—')}</span>
+          </div>
+          <div class="appt-row">
+            <i class="ti ti-user"></i>
+            <span class="appt-row-label">Profesional</span>
+            <span class="appt-row-value">${esc(appt.professionals?.name ?? '—')}</span>
+          </div>
+          <div class="appt-row">
+            <i class="ti ti-calendar"></i>
+            <span class="appt-row-label">Fecha</span>
+            <span class="appt-row-value">${fmtDate(appt.scheduled_at)}</span>
+          </div>
+          <div class="appt-row">
+            <i class="ti ti-user-check"></i>
+            <span class="appt-row-label">Cliente</span>
+            <span class="appt-row-value">${esc(appt.client_name)}</span>
+          </div>`;
+
+        document.getElementById('back-link').href = `index.html?negocio=${encodeURIComponent(appt.businesses?.slug ?? '')}`;
+        showState('confirm');
+
+      } catch {
+        showError('Error de conexión', 'No pudimos cargar tu reserva. Intenta más tarde.');
+      }
+    }
+
+    document.getElementById('reschedule-link').href = `reschedule.html?token=${token}`;
+
+    init();
+    
+  </script>
+</body>
+</html>

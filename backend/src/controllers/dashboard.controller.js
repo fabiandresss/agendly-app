@@ -17,8 +17,12 @@ async function getByPeriod(req, res) {
     if (!['day','week','month'].includes(period)) {
       return res.status(400).json({ error: 'period debe ser day, week o month' });
     }
+    const n = parseInt(limit, 10);
+    if (!Number.isInteger(n) || n < 1 || n > 120) {
+      return res.status(400).json({ error: 'limit debe ser un entero entre 1 y 120' });
+    }
     const biz  = await authService.verifyBusinessOwnership(req.params.slug, req.user.id);
-    const data = await dashboardService.getByPeriod(biz.id, period, parseInt(limit));
+    const data = await dashboardService.getByPeriod(biz.id, period, n);
     res.json({ data });
   } catch (err) { res.status(err.statusCode || 500).json({ error: err.message }); }
 }

@@ -7,7 +7,7 @@ GET http://localhost:3000/api/businesses/barberia-tony/services
 ### Listar profesionales
 GET http://localhost:3000/api/businesses/barberia-tony/professionals
 
-### Crear una reserva (ajusta la fecha a mañana)
+### Crear una reserva (ajusta la fecha a una futura; sin zona = hora del negocio)
 POST http://localhost:3000/api/appointments
 Content-Type: application/json
 
@@ -18,7 +18,7 @@ Content-Type: application/json
   "clientName": "Benjamin Guzman",
   "clientPhone": "+56912345678",
   "clientEmail": "benjabenjita@email.com",
-  "scheduledAt": "2026-04-16T14:00:00-04:00",
+  "scheduledAt": "2027-04-14T14:00",
   "notes": "Servicio excelente"
 }
 
@@ -60,13 +60,13 @@ GET http://localhost:3000/api/businesses/barberia-tony/services
 GET http://localhost:3000/api/businesses/barberia-tony/professionals
 
 ### 2. Consulta de disponibilidad básica (reemplaza los UUIDs)
-GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2026-04-15
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2027-04-14
 
 ### 3. Con intervalo de 15 minutos
-GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2026-04-15&interval=15
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2027-04-14&interval=15
 
 ### 4. Día sin horario (domingo = día 0)
-GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2026-04-12
+GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2027-04-11
 
 ### 5. Fecha pasada — debe dar 400
 GET http://localhost:3000/api/availability?businessSlug=barberia-tony&professionalId=0c9dc4af-7d46-4a85-aaee-1d73c2884e3e&serviceId=9490ecd8-73b6-4961-ac15-6a425e986242&date=2024-01-01
@@ -85,7 +85,7 @@ Content-Type: application/json
   "professionalId": "0c9dc4af-7d46-4a85-aaee-1d73c2884e3e",
   "clientName":     "me gustas mucho montse",
   "clientPhone":    "+56995904020",
-  "scheduledAt":    "2026-04-20T10:00:00-05:00"
+  "scheduledAt":    "2027-04-14T10:00:00-05:00"
 }
 
 
@@ -99,7 +99,7 @@ Content-Type: application/json
   "clientName":     "Fabián Andrés",
   "clientPhone":    "+56949663900",
   "clientEmail":    "fabianarmijo610@gmail.com",
-  "scheduledAt":    "2026-04-20T10:00:00-09:00"
+  "scheduledAt":    "2027-04-14T10:00:00-09:00"
 }
 
 ### Summary del dashboard

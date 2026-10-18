@@ -200,6 +200,7 @@
       .form-panel { padding: 32px 24px; justify-content: flex-start; padding-top: 48px; }
     }
   </style>
+  <script src="config.js"></script>
 </head>
 <body>
 
@@ -343,11 +344,12 @@
   </div>
 
   <script>
-    const API = 'http://localhost:3000';
+    const API = AGENDLY_API;
 
     // ── Redirigir si ya hay sesión ──
     if (sessionStorage.getItem('agendly_token')) {
-      window.location.href = 'app.html';
+      const slug = sessionStorage.getItem('agendly_slug');
+      window.location.href = slug ? `app.html?negocio=${encodeURIComponent(slug)}` : 'onboarding.html';
     }
 
     // ── Visibilidad de contraseña ──

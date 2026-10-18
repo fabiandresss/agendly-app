@@ -104,7 +104,7 @@ async function replaceSchedules(req, res) {
   }
 }
 
-// Agregar antes del module.exports
+// ─── NEGOCIO Y BLOQUEOS ──────────────────────────────────────────
 
 async function updateBusiness(req, res) {
   try {
@@ -132,9 +132,6 @@ async function createBlock(req, res) {
     if (!name || !start_date || !end_date) {
       return res.status(400).json({ error: 'name, start_date y end_date son requeridos' });
     }
-    if (start_date > end_date) {
-      return res.status(400).json({ error: 'start_date debe ser antes que end_date' });
-    }
     const biz  = await getVerifiedBusiness(req.params.slug, req.user.id);
     const data = await adminService.createBlock(biz.id, { name, start_date, end_date, professional_id });
     res.status(201).json({ data });
@@ -156,13 +153,7 @@ async function deleteBlock(req, res) {
 async function getProfessionalServices(req, res) {
   try {
     const biz  = await getVerifiedBusiness(req.params.slug, req.user.id);
-    // Verificar que el profesional pertenece al negocio
-    const { data: pro } = await require('../config/supabase')
-      .from('professionals').select('id')
-      .eq('id', req.params.professionalId)
-      .eq('business_id', biz.id).single();
-    if (!pro) return res.status(404).json({ error: 'Profesional no encontrado' });
-    const data = await adminService.getProfessionalServices(req.params.professionalId);
+    const data = await adminService.getProfessionalServices(biz.id, req.params.professionalId);
     res.json({ data });
   } catch (err) {
     res.status(err.statusCode || 500).json({ error: err.message });
@@ -172,8 +163,8 @@ async function getProfessionalServices(req, res) {
 async function setProfessionalServices(req, res) {
   try {
     const { serviceIds } = req.body;
-    if (!Array.isArray(serviceIds)) {
-      return res.status(400).json({ error: 'serviceIds debe ser un array' });
+    if (!Array.isArray(serviceIds) || serviceIds.some(id => typeof id !== 'string')) {
+      return res.status(400).json({ error: 'serviceIds debe ser un array de ids' });
     }
     const biz  = await getVerifiedBusiness(req.params.slug, req.user.id);
     const data = await adminService.setProfessionalServices(biz.id, req.params.professionalId, serviceIds);

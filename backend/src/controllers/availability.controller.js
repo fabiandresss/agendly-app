@@ -1,13 +1,15 @@
 // src/controllers/availability.controller.js
 // Valida los parámetros de la request y llama al service de disponibilidad.
 
+const supabase            = require('../config/supabase');
 const businessService     = require('../services/business.service');
 const appointmentService  = require('../services/appointment.service');
+const { todayStr, isValidDateStr } = require('../utils/time');
 
 /**
  * GET /api/availability
  * Query params requeridos: businessSlug, professionalId, serviceId, date
- * Query params opcionales: interval (15 o 30, default 30)
+ * Query params opcionales: interval (15 o 30)
  */
 async function getAvailability(req, res) {
   try {
@@ -20,12 +22,12 @@ async function getAvailability(req, res) {
     if (!date)           missing.push('date');
     if (missing.length)  return res.status(400).json({ error: 'Faltan parámetros', missing });
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    if (!isValidDateStr(date)) {
       return res.status(400).json({ error: 'Formato de fecha inválido. Usar YYYY-MM-DD' });
     }
 
-    const today = new Date(); today.setHours(0,0,0,0);
-    if (new Date(`${date}T12:00:00`) < today) {
+    // Comparación de strings "YYYY-MM-DD" en la zona horaria del negocio
+    if (date < todayStr()) {
       return res.status(400).json({ error: 'No se puede consultar disponibilidad en fechas pasadas' });
     }
 
@@ -37,7 +39,6 @@ async function getAvailability(req, res) {
     const business = await businessService.getBusinessBySlug(businessSlug);
     if (!business) return res.status(404).json({ error: 'Negocio no encontrado' });
 
-    const supabase = require('../config/supabase');
     const { data: professional, error: proErr } = await supabase
       .from('professionals')
       .select('id, name')
@@ -71,7 +72,7 @@ async function getAvailability(req, res) {
   } catch (err) {
     const code = err.statusCode || 500;
     console.error('[availability.controller]', err.message);
-    res.status(code).json({ error: err.message });
+    res.status(code).json({ error: code === 500 ? 'Error al consultar la disponibilidad' : err.message });
   }
 }
 

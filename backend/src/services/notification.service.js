@@ -32,8 +32,18 @@ const resendClient = (() => {
   return new Resend(key);
 })();
 
-const WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM;
-const EMAIL_FROM    = 'onboarding@resend.dev'; // cambia esto
+const WHATSAPP_FROM = (() => {
+  const from = process.env.TWILIO_WHATSAPP_FROM;
+  if (!from) return from;
+  return from.startsWith('whatsapp:') ? from : `whatsapp:${from}`;
+})();
+
+// Remitente de los correos. 'onboarding@resend.dev' es el remitente de PRUEBA
+// de Resend (solo entrega al correo del dueño de la cuenta). En producción
+// define EMAIL_FROM con un dominio verificado en Resend.
+const EMAIL_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+
+const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:5500').replace(/\/+$/, '');
 
 // ─── Utilidades ───────────────────────────────────────────────────
 
@@ -57,7 +67,17 @@ function formatDateTime(isoString) {
  * "+56 9 1234 5678" → "whatsapp:+56912345678"
  */
 function toWhatsAppNumber(phone) {
-  return `whatsapp:${phone.replace(/\s/g, '')}`;
+  return `whatsapp:${String(phone).replace(/[^\d+]/g, '')}`;
+}
+
+/** Escapa texto del usuario antes de meterlo en HTML (emails). */
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 // ─── Capa de transporte ───────────────────────────────────────────
@@ -71,7 +91,7 @@ function toWhatsAppNumber(phone) {
  * @returns {Promise<boolean>}
  */
 async function sendWhatsApp(to, message) {
-  if (!twilioClient) return false;
+  if (!twilioClient || !WHATSAPP_FROM || !to) return false;
 
   try {
     const result = await twilioClient.messages.create({
@@ -118,17 +138,22 @@ async function sendEmail(to, subject, html) {
 // Separar el texto de la lógica de envío permite editarlos
 // sin tocar código de infraestructura.
 
-function buildClientConfirmationWA({ clientName, businessName, serviceName, professionalName, scheduledAt }) {
+function buildClientConfirmationWA({ clientName, businessName, serviceName, professionalName, scheduledAt, cancelToken, frontendUrl }) {
+  const dateReadable  = formatDateTime(scheduledAt);
+  const cancelLink    = `${frontendUrl}/cancel.html?token=${cancelToken}`;
+  const reschedLink   = `${frontendUrl}/reschedule.html?token=${cancelToken}`;
+
   return [
-    `✅ *Reserva confirmada en ${businessName}*`,
+    `✅ *Reserva registrada en ${businessName}*`,
     ``,
-    `Hola ${clientName}, tu hora quedó agendada:`,
+    `Hola ${clientName}, tu hora quedó agendada (el negocio la confirmará pronto):`,
     ``,
     `📋 *Servicio:* ${serviceName}`,
     `👤 *Profesional:* ${professionalName}`,
-    `📅 *Fecha y hora:* ${formatDateTime(scheduledAt)}`,
+    `📅 *Fecha y hora:* ${dateReadable}`,
     ``,
-    `Si necesitas cancelar, contáctanos directamente.`,
+    `🔄 Reagendar: ${reschedLink}`,
+    `❌ Cancelar: ${cancelLink}`,
     ``,
     `_Mensaje automático de AGENDLY_`,
   ].join('\n');
@@ -149,122 +174,106 @@ function buildOwnerAlertWA({ clientName, clientPhone, serviceName, professionalN
   ].join('\n');
 }
 
-function buildReminderWA({ clientName, businessName, serviceName, professionalName, scheduledAt }) {
-  return [
-    `⏰ *Recordatorio de tu reserva mañana*`,
+function buildReminderWA({ clientName, businessName, serviceName, professionalName, scheduledAt, cancelToken, frontendUrl }) {
+  const lines = [
+    `⏰ *Recordatorio de tu reserva*`,
     ``,
     `Hola ${clientName}, te recordamos tu hora en *${businessName}*:`,
     ``,
     `📋 *Servicio:* ${serviceName}`,
     `👤 *Profesional:* ${professionalName}`,
     `📅 *Fecha y hora:* ${formatDateTime(scheduledAt)}`,
-    ``,
-    `Te esperamos. Si necesitas cancelar, avísanos con anticipación.`,
-    ``,
-    `_Mensaje automático de AGENDLY_`,
-  ].join('\n');
+  ];
+
+  if (cancelToken) {
+    lines.push(
+      ``,
+      `🔄 Reagendar: ${frontendUrl}/reschedule.html?token=${cancelToken}`,
+      `❌ Cancelar: ${frontendUrl}/cancel.html?token=${cancelToken}`,
+    );
+  }
+
+  lines.push(``, `_Mensaje automático de AGENDLY_`);
+  return lines.join('\n');
 }
 
 /**
  * Genera el HTML del email de confirmación.
  * Diseño minimalista compatible con la mayoría de clientes de email.
  */
-function buildConfirmationEmailHTML({ clientName, businessName, serviceName, professionalName, scheduledAt }) {
-  const dateReadable = formatDateTime(scheduledAt);
+function buildConfirmationEmailHTML(data) {
+  const clientName       = escapeHtml(data.clientName);
+  const businessName     = escapeHtml(data.businessName);
+  const serviceName      = escapeHtml(data.serviceName);
+  const professionalName = escapeHtml(data.professionalName);
+  const dateReadable     = escapeHtml(formatDateTime(data.scheduledAt));
+  const cancelLink       = `${data.frontendUrl}/cancel.html?token=${encodeURIComponent(data.cancelToken)}`;
+  const reschedLink      = `${data.frontendUrl}/reschedule.html?token=${encodeURIComponent(data.cancelToken)}`;
 
   return `
 <!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-</head>
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/></head>
 <body style="margin:0;padding:0;background:#f8f7ff;font-family:'Segoe UI',Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 16px;">
-    <tr>
-      <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0"
-               style="background:#ffffff;border-radius:16px;overflow:hidden;
-                      border:1px solid #e5e3ff;">
-
-          <!-- Header -->
-          <tr>
-            <td style="background:#4f46e5;padding:32px 40px;text-align:center;">
-              <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700;">
-                AGENDLY
-              </h1>
-              <p style="color:rgba(255,255,255,0.85);margin:8px 0 0;font-size:15px;">
-                Confirmación de reserva
-              </p>
-            </td>
-          </tr>
-
-          <!-- Cuerpo -->
-          <tr>
-            <td style="padding:40px;">
-              <p style="margin:0 0 24px;font-size:16px;color:#1e1b4b;">
-                Hola <strong>${clientName}</strong>, tu reserva en
-                <strong>${businessName}</strong> está confirmada.
-              </p>
-
-              <!-- Detalle de la reserva -->
-              <table width="100%" cellpadding="0" cellspacing="0"
-                     style="background:#f8f7ff;border-radius:12px;
-                            border:1px solid #e5e3ff;margin-bottom:24px;">
-                <tr>
-                  <td style="padding:20px 24px;">
-
-                    <table width="100%" cellpadding="6" cellspacing="0">
-                      <tr>
-                        <td style="color:#6b7280;font-size:13px;width:130px;">
-                          Servicio
-                        </td>
-                        <td style="color:#1e1b4b;font-size:14px;font-weight:600;">
-                          ${serviceName}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="color:#6b7280;font-size:13px;">
-                          Profesional
-                        </td>
-                        <td style="color:#1e1b4b;font-size:14px;font-weight:600;">
-                          ${professionalName}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="color:#6b7280;font-size:13px;">
-                          Fecha y hora
-                        </td>
-                        <td style="color:#4f46e5;font-size:14px;font-weight:700;">
-                          ${dateReadable}
-                        </td>
-                      </tr>
-                    </table>
-
-                  </td>
-                </tr>
-              </table>
-
-              <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
-                Si necesitas cancelar o reagendar tu hora, contáctanos
-                directamente. Este es un mensaje automático, no respondas a él.
-              </p>
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td style="background:#f8f7ff;padding:20px 40px;text-align:center;
-                       border-top:1px solid #e5e3ff;">
-              <p style="margin:0;font-size:12px;color:#9ca3af;">
-                Enviado automáticamente por AGENDLY
-              </p>
-            </td>
-          </tr>
-
-        </table>
-      </td>
-    </tr>
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e3ff;">
+        <tr>
+          <td style="background:#4f46e5;padding:28px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;">AGENDLY</h1>
+            <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:14px;">Confirmación de reserva</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:32px 40px;">
+            <p style="margin:0 0 20px;font-size:15px;color:#1e1b4b;">
+              Hola <strong>${clientName}</strong>, tu reserva en <strong>${businessName}</strong> fue registrada.
+            </p>
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8f7ff;border-radius:12px;border:1px solid #e5e3ff;margin-bottom:24px;">
+              <tr><td style="padding:20px 24px;">
+                <table width="100%" cellpadding="6" cellspacing="0">
+                  <tr>
+                    <td style="color:#6b7280;font-size:12px;width:120px;">Servicio</td>
+                    <td style="color:#1e1b4b;font-size:14px;font-weight:600;">${serviceName}</td>
+                  </tr>
+                  <tr>
+                    <td style="color:#6b7280;font-size:12px;">Profesional</td>
+                    <td style="color:#1e1b4b;font-size:14px;font-weight:600;">${professionalName}</td>
+                  </tr>
+                  <tr>
+                    <td style="color:#6b7280;font-size:12px;">Fecha y hora</td>
+                    <td style="color:#4f46e5;font-size:14px;font-weight:700;">${dateReadable}</td>
+                  </tr>
+                </table>
+              </td></tr>
+            </table>
+            <p style="margin:0 0 20px;font-size:13px;color:#6b7280;line-height:1.6;">
+              Si necesitas cambiar o cancelar tu reserva, puedes hacerlo hasta el día de la cita.
+            </p>
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="border-radius:8px;background:#eef2ff;">
+                  <a href="${reschedLink}" style="display:inline-block;padding:10px 20px;color:#4f46e5;font-size:13px;font-weight:600;text-decoration:none;">
+                    Reagendar mi reserva
+                  </a>
+                </td>
+                <td width="10"></td>
+                <td style="border-radius:8px;background:#fee2e2;">
+                  <a href="${cancelLink}" style="display:inline-block;padding:10px 20px;color:#dc2626;font-size:13px;font-weight:600;text-decoration:none;">
+                    Cancelar mi reserva
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8f7ff;padding:16px 40px;text-align:center;border-top:1px solid #e5e3ff;">
+            <p style="margin:0;font-size:11px;color:#9ca3af;">Enviado automáticamente por AGENDLY</p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
   </table>
 </body>
 </html>`.trim();
@@ -279,12 +288,17 @@ function buildConfirmationEmailHTML({ clientName, businessName, serviceName, pro
  * Envía WhatsApp + Email si tiene correo.
  */
 async function notifyAppointmentCreated(appointment, businessName, serviceName, professionalName) {
+  const frontendUrl  = getFrontendUrl();
+  const cancelToken  = appointment.cancel_token;
+
   const waMessage = buildClientConfirmationWA({
     clientName:       appointment.client_name,
     businessName,
     serviceName,
     professionalName,
     scheduledAt:      appointment.scheduled_at,
+    cancelToken,
+    frontendUrl,
   });
 
   const htmlMessage = buildConfirmationEmailHTML({
@@ -293,14 +307,15 @@ async function notifyAppointmentCreated(appointment, businessName, serviceName, 
     serviceName,
     professionalName,
     scheduledAt:      appointment.scheduled_at,
+    cancelToken,
+    frontendUrl,
   });
 
-  // Lanzar ambos en paralelo — no esperamos a que terminen
   return Promise.allSettled([
     sendWhatsApp(appointment.client_phone, waMessage),
     sendEmail(
       appointment.client_email,
-      `✅ Reserva confirmada en ${businessName}`,
+      `✅ Reserva registrada en ${businessName}`,
       htmlMessage
     ),
   ]);
@@ -337,13 +352,65 @@ async function notifyOwnerNewAppointment(appointment, business, serviceName, pro
  *                               (con join desde Supabase)
  */
 async function notifyAppointmentReminder(appointment) {
+  const frontendUrl = getFrontendUrl();
+
   const message = buildReminderWA({
     clientName:       appointment.client_name,
     businessName:     appointment.businesses?.name    ?? 'el negocio',
     serviceName:      appointment.services?.name      ?? 'tu servicio',
     professionalName: appointment.professionals?.name ?? 'tu profesional',
     scheduledAt:      appointment.scheduled_at,
+    cancelToken:      appointment.cancel_token ?? null,
+    frontendUrl,
   });
+
+  return sendWhatsApp(appointment.client_phone, message);
+}
+
+/**
+ * Notifica al dueño que una reserva fue cancelada por el cliente.
+ */
+async function notifyOwnerCancellation(appointment, businessName) {
+  if (!appointment.businesses?.phone) return false;
+
+  const message = [
+    `🚫 *Reserva cancelada en ${businessName}*`,
+    ``,
+    `El cliente canceló su reserva:`,
+    ``,
+    `👤 *Cliente:* ${appointment.client_name}`,
+    `📋 *Servicio:* ${appointment.services?.name ?? '—'}`,
+    `👤 *Profesional:* ${appointment.professionals?.name ?? '—'}`,
+    `📅 *Fecha:* ${formatDateTime(appointment.scheduled_at)}`,
+    ``,
+    `_Cancelado desde el link de la reserva_`,
+  ].join('\n');
+
+  return sendWhatsApp(appointment.businesses.phone, message);
+}
+
+/**
+ * Notifica al cliente que su reserva fue reagendada.
+ */
+async function notifyClientRescheduled(appointment) {
+  const frontendUrl = getFrontendUrl();
+  const cancelLink  = `${frontendUrl}/cancel.html?token=${appointment.cancel_token}`;
+  const reschedLink = `${frontendUrl}/reschedule.html?token=${appointment.cancel_token}`;
+
+  const message = [
+    `🔄 *Reserva reagendada en ${appointment.businesses?.name ?? 'el negocio'}*`,
+    ``,
+    `Hola ${appointment.client_name}, tu hora fue actualizada:`,
+    ``,
+    `📋 *Servicio:* ${appointment.services?.name ?? '—'}`,
+    `👤 *Profesional:* ${appointment.professionals?.name ?? '—'}`,
+    `📅 *Nueva fecha:* ${formatDateTime(appointment.scheduled_at)}`,
+    ``,
+    `🔄 Reagendar: ${reschedLink}`,
+    `❌ Cancelar: ${cancelLink}`,
+    ``,
+    `_Mensaje automático de AGENDLY_`,
+  ].join('\n');
 
   return sendWhatsApp(appointment.client_phone, message);
 }
@@ -354,4 +421,6 @@ module.exports = {
   notifyAppointmentCreated,
   notifyOwnerNewAppointment,
   notifyAppointmentReminder,
+  notifyOwnerCancellation,
+  notifyClientRescheduled,
 };

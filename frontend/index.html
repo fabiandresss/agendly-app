@@ -1,648 +1,1034 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AGENDLY – Reserva tu hora</title>
-
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reserva tu hora</title>
+  <link rel="stylesheet" href="styles/design-system.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
   <style>
-    /* Variables de color de AGENDLY */
-    :root {
-      --agendly-primary:   #4f46e5;
-      --agendly-primary-hover: #4338ca;
-      --agendly-surface:   #f8f7ff;
-      --agendly-card:      #ffffff;
-      --agendly-border:    #e5e3ff;
-      --agendly-text:      #1e1b4b;
-      --agendly-muted:     #6b7280;
-      --agendly-success:   #059669;
-      --agendly-error:     #dc2626;
+    body { min-height: 100vh; background: var(--surface-page); }
+
+    /* ── TOPBAR ── */
+    .booking-topbar {
+      background: var(--surface-card);
+      border-bottom: 1px solid var(--border-default);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .booking-logo {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--brand-primary);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      text-decoration: none;
+    }
+    .booking-logo-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--brand-primary-mid);
+    }
+    .biz-name-tag {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
-    body {
-      background-color: var(--agendly-surface);
-      color: var(--agendly-text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
+    /* ── LAYOUT ── */
+    .booking-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: calc(100vh - 56px);
+      max-width: 1100px;
+      margin: 0 auto;
+      gap: 0;
     }
 
-    /* ── Header del negocio ── */
-    #business-header {
-      background: var(--agendly-primary);
+    /* ── PANEL IZQUIERDO ── */
+    .biz-panel {
+      background: var(--surface-card);
+      border-right: 1px solid var(--border-default);
+      padding: 32px 28px;
+      position: sticky;
+      top: 56px;
+      height: calc(100vh - 56px);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .biz-header { display: flex; flex-direction: column; gap: 10px; }
+    .biz-avatar {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-lg);
+      background: var(--brand-primary-light);
+      color: var(--brand-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-size: 22px; font-weight: 700;
+    }
+    .biz-title {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+    .biz-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .biz-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .biz-meta-item i { font-size: 15px; color: var(--text-muted); flex-shrink: 0; }
+    .biz-divider { height: 1px; background: var(--border-default); }
+
+    /* Resumen de selección */
+    .selection-summary { display: flex; flex-direction: column; gap: 12px; }
+    .summary-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .summary-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      background: var(--surface-subtle);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-default);
+      transition: border-color var(--transition-fast);
+    }
+    .summary-item.filled { border-color: var(--brand-primary-light); background: var(--brand-primary-light); }
+    .summary-item-icon {
+      width: 28px; height: 28px;
+      border-radius: var(--radius-sm);
+      background: var(--border-default);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all var(--transition-fast);
+    }
+    .summary-item.filled .summary-item-icon {
+      background: var(--brand-primary);
       color: white;
-      padding: 2.5rem 0 2rem;
-      text-align: center;
     }
-    #business-header h1 { font-size: 2rem; font-weight: 700; margin: 0; }
-    #business-header p  { opacity: 0.85; margin: 0.4rem 0 0; font-size: 1rem; }
+    .summary-item-label { font-size: 11px; color: var(--text-muted); }
+    .summary-item-value { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 
-    /* ── Tarjetas de servicio y profesional ── */
+    /* ── PANEL DERECHO ── */
+    .form-panel {
+      padding: 32px 36px;
+      overflow-y: auto;
+    }
+
+    /* ── STEPS INDICATOR ── */
+    .steps-bar {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 32px;
+    }
+    .step-dot-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      position: relative;
+      flex: 1;
+    }
+    .step-dot-wrap:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--border-default);
+      z-index: 0;
+      transition: background var(--transition-slow);
+    }
+    .step-dot-wrap.done:not(:last-child)::after { background: var(--brand-primary); }
+    .step-dot {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border-default);
+      background: var(--surface-card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      color: var(--text-muted);
+      position: relative; z-index: 1;
+      transition: all var(--transition-slow);
+    }
+    .step-dot-wrap.active .step-dot {
+      border-color: var(--brand-primary);
+      color: var(--brand-primary);
+      background: var(--brand-primary-light);
+    }
+    .step-dot-wrap.done .step-dot {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary);
+      color: white;
+    }
+    .step-dot-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .step-dot-wrap.active .step-dot-label { color: var(--brand-primary); }
+    .step-dot-wrap.done  .step-dot-label  { color: var(--text-secondary); }
+
+    /* ── STEP SECTIONS ── */
+    .step-section { display: none; animation: fadeIn 0.2s ease both; }
+    .step-section.active { display: block; }
+
+    .step-heading {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+    .step-sub {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 22px;
+    }
+
+    /* ── OPTION CARDS ── */
+    .options-list { display: flex; flex-direction: column; gap: 8px; }
     .option-card {
-      border: 2px solid var(--agendly-border);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
+      border: 1.5px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 14px 16px;
       cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      background: var(--agendly-card);
+      transition: all var(--transition-fast);
+      background: var(--surface-card);
+      display: flex;
+      align-items: center;
+      gap: 14px;
       user-select: none;
     }
-    .option-card:hover  { border-color: var(--agendly-primary); }
+    .option-card:hover { border-color: var(--brand-primary); background: var(--surface-subtle); }
     .option-card.selected {
-      border-color: var(--agendly-primary);
-      background: var(--agendly-surface);
-      box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+      border-color: var(--brand-primary);
+      background: var(--brand-primary-light);
+      box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
     }
-    .option-card .card-title  { font-weight: 600; margin: 0 0 0.2rem; font-size: 1rem; }
-    .option-card .card-detail { color: var(--agendly-muted); font-size: 0.875rem; margin: 0; }
-    .option-card .card-price  {
-      font-weight: 700;
-      color: var(--agendly-primary);
-      font-size: 0.95rem;
-      margin-top: 0.3rem;
-    }
-
-    /* ── Pasos del formulario ── */
-    .step-section {
-      background: var(--agendly-card);
-      border-radius: 16px;
-      padding: 1.75rem;
-      margin-bottom: 1.5rem;
-      border: 1px solid var(--agendly-border);
-    }
-    .step-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--agendly-primary);
-      margin-bottom: 0.35rem;
-    }
-    .step-title {
-      font-size: 1.15rem;
-      font-weight: 600;
-      margin: 0 0 1.25rem;
-      color: var(--agendly-text);
-    }
-
-    /* ── Botón principal ── */
-    .btn-agendly {
-      background: var(--agendly-primary);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      padding: 0.75rem 2rem;
-      font-size: 1rem;
-      font-weight: 600;
-      width: 100%;
-      cursor: pointer;
-      transition: background 0.15s;
-    }
-    .btn-agendly:hover:not(:disabled) { background: var(--agendly-primary-hover); }
-    .btn-agendly:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    /* ── Pantalla de confirmación ── */
-    #confirmation-screen {
-      display: none;
-      text-align: center;
-      padding: 3rem 1rem;
-    }
-    .confirm-icon {
-      width: 72px; height: 72px;
-      background: #d1fae5;
-      border-radius: 50%;
+    .option-card-icon {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-md);
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-default);
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 1.5rem;
-      font-size: 2rem;
+      font-size: 18px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all var(--transition-fast);
     }
-    .confirm-icon svg { color: var(--agendly-success); }
-
-    /* ── Estados de carga y error ── */
-    .skeleton {
-      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s infinite;
-      border-radius: 8px;
-      height: 80px;
-      margin-bottom: 0.75rem;
+    .option-card.selected .option-card-icon {
+      background: var(--brand-primary);
+      border-color: var(--brand-primary);
+      color: white;
     }
-    @keyframes shimmer { to { background-position: -200% 0; } }
-
-    #error-banner {
-      display: none;
-      background: #fef2f2;
-      border: 1px solid #fca5a5;
-      color: var(--agendly-error);
-      border-radius: 10px;
-      padding: 1rem 1.25rem;
-      margin-bottom: 1.5rem;
-      font-size: 0.9rem;
+    .option-card-body { flex: 1; min-width: 0; }
+    .option-card-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 2px;
+    }
+    .option-card-meta {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .option-card-meta span { display: flex; align-items: center; gap: 3px; }
+    .option-card-price {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--brand-primary);
+      flex-shrink: 0;
+    }
+    .option-card-check {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border-default);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all var(--transition-fast);
+      font-size: 11px;
+      color: transparent;
+    }
+    .option-card.selected .option-card-check {
+      background: var(--brand-primary);
+      border-color: var(--brand-primary);
+      color: white;
     }
 
-    #submit-error {
-      display: none;
-      color: var(--agendly-error);
-      font-size: 0.875rem;
-      margin-top: 0.75rem;
+    /* ── SLOTS ── */
+    .date-picker-wrap {
+      margin-bottom: 20px;
+    }
+    .date-picker-wrap label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+    .slots-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      display: block;
+    }
+    .slots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+    }
+    .slot-btn {
+      padding: 9px 6px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-default);
+      background: var(--surface-card);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-family: var(--font-body);
       text-align: center;
     }
-
-    /* Inputs del formulario */
-    .form-control, .form-select {
-      border-color: var(--agendly-border);
-      border-radius: 8px;
+    .slot-btn:hover  { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-primary-light); }
+    .slot-btn.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
+    .slots-empty {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      background: var(--surface-subtle);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-default);
     }
-    .form-control:focus, .form-select:focus {
-      border-color: var(--agendly-primary);
-      box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+    .slots-loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 12px 0;
+    }
+    .spin { animation: spin 0.7s linear infinite; }
+
+    /* ── FORMULARIO DATOS ── */
+    .contact-form { display: flex; flex-direction: column; gap: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .fgroup { display: flex; flex-direction: column; gap: 5px; }
+    .flabel { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .flabel .req { color: var(--color-error); }
+
+    /* ── CONFIRMACIÓN ── */
+    .confirm-screen {
+      display: none;
+      text-align: center;
+      padding: 48px 24px;
+      animation: fadeIn 0.3s ease both;
+    }
+    .confirm-screen.show { display: block; }
+    .confirm-check {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      background: var(--color-success-light);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+      color: var(--color-success);
+    }
+    .confirm-title {
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .confirm-detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.7;
+    }
+    .confirm-card {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: left;
+      margin-bottom: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .confirm-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .confirm-row i { font-size: 16px; color: var(--brand-primary); flex-shrink: 0; width: 20px; }
+    .confirm-row-label { color: var(--text-muted); width: 90px; flex-shrink: 0; }
+    .confirm-row-value { font-weight: 600; color: var(--text-primary); }
+
+    /* ── NAV BUTTONS ── */
+    .step-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-default);
     }
 
-    #slots-container button.active {
-  background-color: var(--agendly-primary);
-  color: white;
-  border-color: var(--agendly-primary);
-}
+    /* ── ERROR BANNER ── */
+    .error-banner {
+      display: none;
+      background: var(--color-error-light);
+      border: 1px solid #fca5a5;
+      color: var(--color-error);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      font-size: 13px;
+      margin-bottom: 20px;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-banner.show { display: flex; }
+
+    /* ── SKELETON ── */
+    .skel { background: linear-gradient(90deg, var(--border-default) 25%, var(--surface-subtle) 50%, var(--border-default) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius-md); }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      .booking-layout { grid-template-columns: 1fr; }
+      .biz-panel { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border-default); padding: 20px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px; }
+      .biz-header { flex-direction: row; align-items: center; }
+      .biz-meta, .biz-divider, .selection-summary { display: none; }
+      .form-panel { padding: 20px 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .step-dot-label { display: none; }
+    }
   </style>
+  <script src="config.js"></script>
 </head>
-
 <body>
 
-  <!-- ═══════════════════════════════════════
-       HEADER: nombre y datos del negocio
-  ════════════════════════════════════════ -->
-  <div id="business-header">
-    <div class="container">
-      <h1 id="business-name">Cargando...</h1>
-      <p  id="business-info"></p>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════
-       CONTENIDO PRINCIPAL
-  ════════════════════════════════════════ -->
-  <div class="container py-4" style="max-width: 680px;">
-
-    <!-- Banner de error global (negocio no encontrado, etc.) -->
-    <div id="error-banner"></div>
-
-    <!-- ── FORMULARIO DE RESERVA ── -->
-    <div id="booking-form">
-
-      <!-- PASO 1: Elegir servicio -->
-      <div class="step-section">
-        <p class="step-label">Paso 1</p>
-        <h2 class="step-title">¿Qué servicio necesitas?</h2>
-        <div id="services-list">
-          <!-- Skeletons de carga -->
-          <div class="skeleton"></div>
-          <div class="skeleton"></div>
-        </div>
-      </div>
-
-      <!-- PASO 2: Elegir profesional -->
-      <div class="step-section">
-        <p class="step-label">Paso 2</p>
-        <h2 class="step-title">¿Con quién quieres atenderte?</h2>
-        <div id="professionals-list">
-          <div class="skeleton"></div>
-          <div class="skeleton"></div>
-        </div>
-      </div>
-
-      <!-- PASO 3: Elegir fecha y hora -->
-      <div class="step-section">
-        <p class="step-label">Paso 3</p>
-        <h2 class="step-title">¿Cuándo quieres tu hora?</h2>
-        <div class="row g-3">
-          <div class="col-6">
-            <label class="form-label fw-semibold" for="input-date">Fecha</label>
-            <input type="date" id="input-date" class="form-control" />
-          </div>
-          <div class="col-12">
-  <label class="form-label fw-semibold">Horarios disponibles</label>
-  <div id="slots-container" class="d-flex flex-wrap gap-2">
-    <p class="text-muted">Selecciona fecha y profesional</p>
+<!-- TOPBAR -->
+<div class="booking-topbar">
+  <a href="#" class="booking-logo">AGENDLY<div class="booking-logo-dot"></div></a>
+  <div class="biz-name-tag">
+    <i class="ti ti-map-pin" style="font-size:14px;"></i>
+    <span id="topbar-biz-name">Cargando...</span>
   </div>
 </div>
-        </div>
+
+<!-- LAYOUT -->
+<div class="booking-layout">
+
+  <!-- Panel izquierdo -->
+  <aside class="biz-panel">
+    <div class="biz-header">
+      <div class="biz-avatar" id="biz-avatar">?</div>
+      <div>
+        <div class="biz-title" id="biz-title">Cargando...</div>
       </div>
-
-      <!-- PASO 4: Datos del cliente -->
-      <div class="step-section">
-        <p class="step-label">Paso 4</p>
-        <h2 class="step-title">Tus datos de contacto</h2>
-        <div class="row g-3">
-          <div class="col-12">
-            <label class="form-label fw-semibold" for="input-name">Nombre completo *</label>
-            <input type="text" id="input-name" class="form-control" placeholder="Juan Pérez" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="input-phone">Teléfono *</label>
-            <input type="tel" id="input-phone" class="form-control" placeholder="+56912345678" />
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-semibold" for="input-email">Email (opcional)</label>
-            <input type="email" id="input-email" class="form-control" placeholder="juan@email.com" />
-          </div>
-          <div class="col-12">
-            <label class="form-label fw-semibold" for="input-notes">Notas (opcional)</label>
-            <textarea id="input-notes" class="form-control" rows="2"
-              placeholder="Ej: prefiero corte con tijera"></textarea>
-          </div>
-        </div>
-      </div>
-
-      <!-- BOTÓN DE ENVÍO -->
-      <button id="btn-submit" class="btn-agendly" disabled>
-        Confirmar reserva
-      </button>
-      <div id="submit-error"></div>
-
-    </div><!-- /booking-form -->
-
-    <!-- ── PANTALLA DE CONFIRMACIÓN (se muestra luego del POST) ── -->
-    <div id="confirmation-screen">
-      <div class="confirm-icon">
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <polyline points="20 6 9 17 4 12"/>
-        </svg>
-      </div>
-      <h2 style="font-weight:700; font-size:1.5rem;">¡Reserva confirmada!</h2>
-      <p id="confirm-detail" style="color:var(--agendly-muted); margin: 0.5rem 0 2rem;"></p>
-      <button class="btn-agendly" style="max-width:280px;"
-              onclick="location.reload()">Hacer otra reserva</button>
     </div>
 
-  </div><!-- /container -->
+    <div class="biz-meta" id="biz-meta"></div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="biz-divider"></div>
 
-  <script>
-    // ═══════════════════════════════════════════════════════
-    //  AGENDLY — Lógica del formulario de reserva
-    // ═══════════════════════════════════════════════════════
+    <div class="selection-summary">
+      <div class="summary-title">Tu selección</div>
 
-    // ── Configuración ──
-    const API_BASE = 'http://localhost:3000';
+      <div class="summary-item" id="sum-service">
+        <div class="summary-item-icon"><i class="ti ti-tools"></i></div>
+        <div>
+          <div class="summary-item-label">Servicio</div>
+          <div class="summary-item-value" id="sum-service-val">Sin seleccionar</div>
+        </div>
+      </div>
 
-    // ── Estado de la selección del usuario ──
+      <div class="summary-item" id="sum-pro">
+        <div class="summary-item-icon"><i class="ti ti-user"></i></div>
+        <div>
+          <div class="summary-item-label">Profesional</div>
+          <div class="summary-item-value" id="sum-pro-val">Sin seleccionar</div>
+        </div>
+      </div>
+
+      <div class="summary-item" id="sum-date">
+        <div class="summary-item-icon"><i class="ti ti-calendar"></i></div>
+        <div>
+          <div class="summary-item-label">Fecha y hora</div>
+          <div class="summary-item-value" id="sum-date-val">Sin seleccionar</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Panel derecho -->
+  <div class="form-panel">
+
+    <!-- Error global -->
+    <div class="error-banner" id="error-banner">
+      <i class="ti ti-alert-circle" style="font-size:16px;flex-shrink:0;"></i>
+      <span id="error-text"></span>
+    </div>
+
+    <!-- Steps indicator -->
+    <div class="steps-bar" id="steps-bar">
+      <div class="step-dot-wrap active" data-step="1">
+        <div class="step-dot">1</div>
+        <span class="step-dot-label">Servicio</span>
+      </div>
+      <div class="step-dot-wrap" data-step="2">
+        <div class="step-dot">2</div>
+        <span class="step-dot-label">Profesional</span>
+      </div>
+      <div class="step-dot-wrap" data-step="3">
+        <div class="step-dot">3</div>
+        <span class="step-dot-label">Fecha</span>
+      </div>
+      <div class="step-dot-wrap" data-step="4">
+        <div class="step-dot">4</div>
+        <span class="step-dot-label">Datos</span>
+      </div>
+    </div>
+
+    <!-- PASO 1: Servicio -->
+    <div class="step-section active" id="step-1">
+      <div class="step-heading">¿Qué servicio necesitas?</div>
+      <div class="step-sub">Selecciona el servicio para tu próxima visita.</div>
+      <div class="options-list" id="services-list">
+        <div class="skel" style="height:68px;"></div>
+        <div class="skel" style="height:68px;"></div>
+        <div class="skel" style="height:68px;"></div>
+      </div>
+    </div>
+
+    <!-- PASO 2: Profesional -->
+    <div class="step-section" id="step-2">
+      <div class="step-heading">¿Con quién quieres atenderte?</div>
+      <div class="step-sub">Estos profesionales ofrecen el servicio que elegiste.</div>
+      <div class="options-list" id="pros-list">
+        <div class="skel" style="height:68px;"></div>
+        <div class="skel" style="height:68px;"></div>
+      </div>
+      <div class="step-nav">
+        <button class="btn btn-ghost btn-sm" onclick="goStep(1)">
+          <i class="ti ti-arrow-left" style="font-size:14px;"></i> Volver
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 3: Fecha y hora -->
+    <div class="step-section" id="step-3">
+      <div class="step-heading">¿Cuándo quieres tu hora?</div>
+      <div class="step-sub">Selecciona una fecha para ver los horarios disponibles.</div>
+
+      <div class="date-picker-wrap">
+        <label class="flabel">Fecha</label>
+        <input type="date" id="input-date" class="form-input" style="max-width:220px;" oninput="onDateChange()"/>
+      </div>
+
+      <span class="slots-label" id="slots-label" style="display:none;">Horarios disponibles</span>
+      <div id="slots-container"></div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost btn-sm" onclick="goStep(2)">
+          <i class="ti ti-arrow-left" style="font-size:14px;"></i> Volver
+        </button>
+        <button class="btn btn-primary" id="btn-step3-next" disabled onclick="goStep(4)">
+          Continuar <i class="ti ti-arrow-right" style="font-size:14px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PASO 4: Datos del cliente -->
+    <div class="step-section" id="step-4">
+      <div class="step-heading">Tus datos de contacto</div>
+      <div class="step-sub">Para enviarte la confirmación de tu reserva.</div>
+
+      <div class="contact-form">
+        <div class="fgroup">
+          <label class="flabel" for="input-name">Nombre completo <span class="req">*</span></label>
+          <input type="text" id="input-name" class="form-input" placeholder="Juan Pérez" oninput="updateBtn()"/>
+        </div>
+        <div class="form-row">
+          <div class="fgroup">
+            <label class="flabel" for="input-phone">Teléfono <span class="req">*</span></label>
+            <input type="tel" id="input-phone" class="form-input" placeholder="+56912345678" oninput="updateBtn()"/>
+          </div>
+          <div class="fgroup">
+            <label class="flabel" for="input-email">Email</label>
+            <input type="email" id="input-email" class="form-input" placeholder="juan@email.com"/>
+          </div>
+        </div>
+        <div class="fgroup">
+          <label class="flabel" for="input-notes">Notas (opcional)</label>
+          <textarea id="input-notes" class="form-input" rows="2" style="resize:vertical;" placeholder="Ej: prefiero corte con tijera"></textarea>
+        </div>
+      </div>
+
+      <div class="alert alert-error mt-4" id="submit-error" style="display:none;">
+        <span id="submit-error-text"></span>
+      </div>
+
+      <div class="step-nav">
+        <button class="btn btn-ghost btn-sm" onclick="goStep(3)">
+          <i class="ti ti-arrow-left" style="font-size:14px;"></i> Volver
+        </button>
+        <button class="btn btn-primary btn-lg" id="btn-submit" disabled onclick="submitBooking()">
+          Confirmar reserva
+        </button>
+      </div>
+    </div>
+
+    <!-- CONFIRMACIÓN -->
+    <div class="confirm-screen" id="confirm-screen">
+      <div class="confirm-check">
+        <i class="ti ti-check" style="font-size:32px;"></i>
+      </div>
+      <div class="confirm-title">¡Reserva confirmada!</div>
+      <div class="confirm-detail">
+        Te hemos enviado los detalles por WhatsApp.<br/>
+        Te recordaremos 24 horas antes de tu cita.
+      </div>
+      <div class="confirm-card" id="confirm-card"></div>
+      <button class="btn btn-primary btn-lg" onclick="location.reload()">
+        <i class="ti ti-plus" style="font-size:15px;"></i>
+        Hacer otra reserva
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const API_BASE = AGENDLY_API;
+
 const state = {
-  business: null,
+  business:        null,
   selectedService: null,
-  selectedPro: null,
-  selectedTime: null, // 🔥 IMPORTANTE
+  selectedPro:     null,
+  selectedDate:    null,
+  selectedTime:    null,
+  currentStep:     1,
 };
-    // ── Referencias a elementos del DOM ──
-    const els = {
-      businessName:      document.getElementById('business-name'),
-      businessInfo:      document.getElementById('business-info'),
-      servicesList:      document.getElementById('services-list'),
-      professionalsList: document.getElementById('professionals-list'),
-      errorBanner:       document.getElementById('error-banner'),
-      btnSubmit:         document.getElementById('btn-submit'),
-      submitError:       document.getElementById('submit-error'),
-      bookingForm:       document.getElementById('booking-form'),
-      confirmScreen:     document.getElementById('confirmation-screen'),
-      confirmDetail:     document.getElementById('confirm-detail'),
-      inputDate:         document.getElementById('input-date'),
-      inputTime:         document.getElementById('input-time'),
-      inputName:         document.getElementById('input-name'),
-      inputPhone:        document.getElementById('input-phone'),
-      inputEmail:        document.getElementById('input-email'),
-      inputNotes:        document.getElementById('input-notes'),
-      slotsContainer: document.getElementById('slots-container'),
-    };
 
-    // ════════════════════════════════════════════════════════
-    //  UTILIDADES
-    // ════════════════════════════════════════════════════════
+// ── DOM refs ──────────────────────────────────────────
+const $ = id => document.getElementById(id);
 
-    /** Muestra un error global en el banner superior */
-    function showError(msg) {
-      els.errorBanner.textContent = msg;
-      els.errorBanner.style.display = 'block';
-    }
+// ── UTILS ─────────────────────────────────────────────
+const fmtCLP  = n => new Intl.NumberFormat('es-CL', { style:'currency', currency:'CLP', maximumFractionDigits:0 }).format(n ?? 0);
+const fmtDate = iso => new Date(iso).toLocaleString('es-CL', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', timeZone: AGENDLY_TZ });
+const initials = name => name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
 
-    /** Formatea precio en pesos chilenos */
-    function formatPrice(amount) {
-      return new Intl.NumberFormat('es-CL', {
-        style: 'currency', currency: 'CLP', maximumFractionDigits: 0
-      }).format(amount);
-    }
-
-    /** Formatea fecha/hora legible para la confirmación */
-    function formatDateTime(isoString) {
-      return new Date(isoString).toLocaleString('es-CL', {
-        weekday: 'long', day: 'numeric', month: 'long',
-        hour: '2-digit', minute: '2-digit'
-      });
-    }
-
-    /** Obtiene el slug de ?negocio=xxx en la URL */
-    function getSlugFromURL() {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('negocio');
-    }
-
-    /** Activa o desactiva el botón de envío según si todo está completo */
-    function updateSubmitButton() {
-      const allSelected =
-        state.selectedService &&
-        state.selectedPro &&
-        els.inputDate.value &&
-        state.selectedTime &&
-        els.inputName.value.trim() &&
-        els.inputPhone.value.trim();
-
-      els.btnSubmit.disabled = !allSelected;
-    }
-
-    // ════════════════════════════════════════════════════════
-    //  RENDERIZADO DE TARJETAS
-    // ════════════════════════════════════════════════════════
-
-    /**
-     * Crea una tarjeta de opción (servicio o profesional).
-     * Al hacer clic actualiza el estado y marca la tarjeta como seleccionada.
-     */
-    function renderOptionCard(container, item, type) {
-      const card = document.createElement('div');
-      card.className = 'option-card mb-2';
-      card.dataset.id = item.id;
-
-      if (type === 'service') {
-        card.innerHTML = `
-          <p class="card-title">${item.name}</p>
-          <p class="card-detail">${item.duration_min} minutos</p>
-          <p class="card-price">${formatPrice(item.price)}</p>
-        `;
-        card.addEventListener('click', () => {
-          // Quitar selección anterior
-          container.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          state.selectedService = item;
-          state.selectedTime = null; // resetear hora
-          loadAvailableSlots();      // 🔥 cargar horarios
-          updateSubmitButton();
-        });
-      }
-
-      if (type === 'professional') {
-        card.innerHTML = `
-          <p class="card-title">${item.name}</p>
-          ${item.bio ? `<p class="card-detail">${item.bio}</p>` : ''}
-        `;
-        card.addEventListener('click', () => {
-          container.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          state.selectedPro = item;
-          state.selectedTime = null;
-          loadAvailableSlots();
-          updateSubmitButton();
-        });
-      }
-
-      container.appendChild(card);
-    }
-
-    // ════════════════════════════════════════════════════════
-    //  LLAMADAS A LA API
-    // ════════════════════════════════════════════════════════
-
-    /** Carga el negocio y sus datos desde el backend */
-    async function loadBusiness(slug) {
-      const res  = await fetch(`${API_BASE}/api/businesses/${slug}`);
-      const json = await res.json();
-
-      if (!res.ok) throw new Error(json.error || 'Negocio no encontrado');
-      return json.data;
-    }
-
-    /** Carga los servicios del negocio */
-    async function loadServices(slug) {
-      const res  = await fetch(`${API_BASE}/api/businesses/${slug}/services`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Error al cargar servicios');
-      return json.data;
-    }
-
-    /** Carga los profesionales del negocio */
-    async function loadProfessionals(slug) {
-      const res  = await fetch(`${API_BASE}/api/businesses/${slug}/professionals`);
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Error al cargar profesionales');
-      return json.data;
-    }
-
-    async function loadAvailableSlots() {
-      if (!state.selectedService || !state.selectedPro || !els.inputDate.value) {
-  els.slotsContainer.innerHTML =
-    '<p class="text-muted">Selecciona servicio, profesional y fecha</p>';
-  return;
+function showError(msg) {
+  $('error-text').textContent = msg;
+  $('error-banner').classList.add('show');
 }
-  // 1. Validar que todo esté seleccionado
-  if (!state.selectedService || !state.selectedPro || !els.inputDate.value) {
-    return;
+
+// ── STEPS ─────────────────────────────────────────────
+function goStep(n) {
+  // Validar antes de avanzar
+  if (n > state.currentStep) {
+    if (n === 2 && !state.selectedService) return;
+    if (n === 3 && !state.selectedPro)     return;
+    if (n === 4 && !state.selectedTime)    return;
   }
 
-  // 2. Construir URL
-  const url = new URL(`${API_BASE}/api/availability`);
-  url.searchParams.set('businessSlug', state.business.slug);
-  url.searchParams.set('professionalId', state.selectedPro.id);
-  url.searchParams.set('serviceId', state.selectedService.id);
-  url.searchParams.set('date', els.inputDate.value);
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+  $(`step-${n}`)?.classList.add('active');
 
-  // 3. Mostrar loading
-  els.slotsContainer.innerHTML = '<p class="text-muted">Cargando horarios...</p>';
+  // Actualizar stepper visual
+  document.querySelectorAll('.step-dot-wrap').forEach(el => {
+    const sn = parseInt(el.dataset.step);
+    el.classList.remove('active','done');
+    if (sn < n)  el.classList.add('done');
+    if (sn === n) el.classList.add('active');
+    // Actualizar ícono de check en steps completados
+    const dot = el.querySelector('.step-dot');
+    if (sn < n) {
+      dot.innerHTML = '<i class="ti ti-check" style="font-size:12px;"></i>';
+    } else {
+      dot.textContent = sn;
+    }
+  });
+
+  state.currentStep = n;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── SUMMARY PANEL ──────────────────────────────────────
+function updateSummary() {
+  // Servicio
+  if (state.selectedService) {
+    $('sum-service-val').textContent = state.selectedService.name;
+    $('sum-service').classList.add('filled');
+  } else {
+    $('sum-service-val').textContent = 'Sin seleccionar';
+    $('sum-service').classList.remove('filled');
+  }
+  // Profesional
+  if (state.selectedPro) {
+    $('sum-pro-val').textContent = state.selectedPro.name;
+    $('sum-pro').classList.add('filled');
+  } else {
+    $('sum-pro-val').textContent = 'Sin seleccionar';
+    $('sum-pro').classList.remove('filled');
+  }
+  // Fecha y hora
+  if (state.selectedDate && state.selectedTime) {
+    $('sum-date-val').textContent = `${state.selectedDate} · ${state.selectedTime}`;
+    $('sum-date').classList.add('filled');
+  } else {
+    $('sum-date-val').textContent = 'Sin seleccionar';
+    $('sum-date').classList.remove('filled');
+  }
+}
+
+// ── RENDER SERVICIOS ───────────────────────────────────
+function renderServices(services) {
+  const list = $('services-list');
+  if (!services.length) {
+    list.innerHTML = '<div class="slots-empty">No hay servicios disponibles.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  services.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.innerHTML = `
+      <div class="option-card-icon"><i class="ti ti-scissors"></i></div>
+      <div class="option-card-body">
+        <div class="option-card-name">${esc(s.name)}</div>
+        <div class="option-card-meta">
+          <span><i class="ti ti-clock" style="font-size:12px;"></i>${s.duration_min} min</span>
+          ${s.description ? `<span>${esc(s.description)}</span>` : ''}
+        </div>
+      </div>
+      <div class="option-card-price">${fmtCLP(s.price)}</div>
+      <div class="option-card-check"><i class="ti ti-check" style="font-size:10px;"></i></div>
+    `;
+    card.addEventListener('click', async () => {
+      list.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedService = s;
+      state.selectedPro     = null;
+      state.selectedTime    = null;
+      updateSummary();
+
+      // Cargar profesionales y avanzar
+      $('pros-list').innerHTML = '<div class="skel" style="height:68px;"></div><div class="skel" style="height:68px;"></div>';
+      goStep(2);
+
+      try {
+        const res  = await fetch(`${API_BASE}/api/businesses/${state.business.slug}/services/${s.id}/professionals`);
+        const json = await res.json();
+        renderProfessionals(json.data ?? []);
+      } catch {
+        $('pros-list').innerHTML = '<div class="slots-empty">Error al cargar profesionales.</div>';
+      }
+    });
+    list.appendChild(card);
+  });
+}
+
+// ── RENDER PROFESIONALES ───────────────────────────────
+function renderProfessionals(pros) {
+  const list = $('pros-list');
+  if (!pros.length) {
+    list.innerHTML = '<div class="slots-empty">No hay profesionales disponibles para este servicio.</div>';
+    return;
+  }
+  list.innerHTML = '';
+  pros.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'option-card';
+    card.innerHTML = `
+      <div class="option-card-icon" style="font-family:var(--font-display);font-weight:700;font-size:14px;">${esc(initials(p.name))}</div>
+      <div class="option-card-body">
+        <div class="option-card-name">${esc(p.name)}</div>
+        ${p.bio ? `<div class="option-card-meta"><span>${esc(p.bio)}</span></div>` : ''}
+      </div>
+      <div class="option-card-check"><i class="ti ti-check" style="font-size:10px;"></i></div>
+    `;
+    card.addEventListener('click', () => {
+      list.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.selectedPro  = p;
+      state.selectedTime = null;
+      updateSummary();
+      // Resetear fecha y slots
+      $('input-date').value = '';
+      $('slots-container').innerHTML = '';
+      $('slots-label').style.display = 'none';
+      $('btn-step3-next').disabled = true;
+      goStep(3);
+    });
+    list.appendChild(card);
+  });
+}
+
+// ── SLOTS ──────────────────────────────────────────────
+async function onDateChange() {
+  const date = $('input-date').value;
+  if (!date || !state.selectedPro || !state.selectedService) return;
+
+  state.selectedDate = date;
+  state.selectedTime = null;
+  $('btn-step3-next').disabled = true;
+  $('slots-label').style.display = 'block';
+  $('slots-container').innerHTML = `
+    <div class="slots-loading">
+      <i class="ti ti-loader spin"></i> Buscando horarios disponibles...
+    </div>`;
+  updateSummary();
 
   try {
-    // 4. Llamada al backend
-    const res = await fetch(url);
+    const url = new URL(`${API_BASE}/api/availability`);
+    url.searchParams.set('businessSlug',   state.business.slug);
+    url.searchParams.set('professionalId', state.selectedPro.id);
+    url.searchParams.set('serviceId',      state.selectedService.id);
+    url.searchParams.set('date',           date);
+
+    const res  = await fetch(url);
     const json = await res.json();
 
-    // 5. Si no hay horarios
-    if (!res.ok || !json.available) {
-      els.slotsContainer.innerHTML =
-        '<p class="text-danger">No hay horarios disponibles</p>';
+    if (!json.available || !json.slots?.length) {
+      $('slots-container').innerHTML = `
+        <div class="slots-empty">
+          <i class="ti ti-calendar-x" style="font-size:24px;display:block;margin-bottom:6px;opacity:0.4;"></i>
+          ${json.reason ?? 'No hay horarios disponibles para este día.'}
+        </div>`;
       return;
     }
 
-    // 6. Renderizar botones
     renderSlots(json.slots);
-
-  } catch (err) {
-    els.slotsContainer.innerHTML =
-      '<p class="text-danger">Error al cargar horarios</p>';
+  } catch {
+    $('slots-container').innerHTML = '<div class="slots-empty">Error al cargar horarios.</div>';
   }
 }
 
 function renderSlots(slots) {
-  // limpiar contenedor
-  els.slotsContainer.innerHTML = '';
-
+  $('slots-container').innerHTML = '';
+  const grid = document.createElement('div');
+  grid.className = 'slots-grid';
   slots.forEach(time => {
     const btn = document.createElement('button');
-
-    btn.className = 'btn btn-outline-primary btn-sm';
+    btn.className   = 'slot-btn';
     btn.textContent = time;
-
     btn.addEventListener('click', () => {
-
-      // 1. quitar selección anterior
-      document.querySelectorAll('#slots-container button')
-        .forEach(b => b.classList.remove('active'));
-
-      // 2. marcar seleccionado
+      grid.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-
-      // 3. guardar hora en el estado
       state.selectedTime = time;
-
-      // 4. actualizar botón confirmar
-      updateSubmitButton();
+      $('sum-date-val').textContent = `${state.selectedDate} · ${time}`;
+      $('sum-date').classList.add('filled');
+      $('btn-step3-next').disabled = false;
+      updateSummary();
     });
-
-    els.slotsContainer.appendChild(btn);
+    grid.appendChild(btn);
   });
+  $('slots-container').appendChild(grid);
 }
 
-    /** Envía la reserva al backend */
-    async function submitAppointment(payload) {
-      const res  = await fetch(`${API_BASE}/api/appointments`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Error al crear la reserva');
-      return json.data;
-    }
-    // ════════════════════════════════════════════════════════
-    //  INICIALIZACIÓN — se ejecuta al cargar la página
-    // ════════════════════════════════════════════════════════
+// ── STEP 4 BUTTON ──────────────────────────────────────
+function updateBtn() {
+  const name  = $('input-name').value.trim();
+  const phone = $('input-phone').value.trim();
+  $('btn-submit').disabled = !name || !phone;
+}
 
-    async function init() {
-      const slug = getSlugFromURL();
+// ── SUBMIT ─────────────────────────────────────────────
 
-      if (!slug) {
-        showError('No se especificó ningún negocio. Usa la URL: ?negocio=tu-negocio');
-        return;
-      }
+async function submitBooking() {
+  const name  = $('input-name').value.trim();
+  const phone = $('input-phone').value.trim();
+  const email = $('input-email').value.trim();
+  const notes = $('input-notes').value.trim();
 
-      try {
-        // Cargar las tres cosas en paralelo (más rápido que una por una)
-        const [business, services, professionals] = await Promise.all([
-          loadBusiness(slug),
-          loadServices(slug),
-          loadProfessionals(slug),
-        ]);
+  $('submit-error').style.display = 'none';
 
-        // Guardar el negocio en el estado
-        state.business = business;
+  // Validación de teléfono
+  if (!validatePhone(phone)) {
+    $('submit-error-text').textContent = 'Ingresa un número de teléfono válido (ej: +56912345678)';
+    $('submit-error').style.display = 'flex';
+    return;
+  }
 
-        // Mostrar datos del negocio en el header
-        els.businessName.textContent = business.name;
-        els.businessInfo.textContent =
-          [business.phone, business.address].filter(Boolean).join(' · ');
+  // Sin zona horaria: el servidor lo interpreta en la hora del negocio (igual que los horarios mostrados)
+  const scheduledAt = `${state.selectedDate}T${state.selectedTime}`;
 
-        // Actualizar el título de la pestaña del navegador
-        document.title = `${business.name} – Reserva tu hora`;
+  const btn = $('btn-submit');
+  btn.disabled    = true;
+  btn.textContent = 'Enviando...';
 
-        // Renderizar servicios
-        els.servicesList.innerHTML = '';
-        if (services.length === 0) {
-          els.servicesList.innerHTML = '<p class="text-muted">No hay servicios disponibles.</p>';
-        } else {
-          services.forEach(s => renderOptionCard(els.servicesList, s, 'service'));
-        }
-
-        // Renderizar profesionales
-        els.professionalsList.innerHTML = '';
-        if (professionals.length === 0) {
-          els.professionalsList.innerHTML = '<p class="text-muted">No hay profesionales disponibles.</p>';
-        } else {
-          professionals.forEach(p => renderOptionCard(els.professionalsList, p, 'professional'));
-        }
-
-      } catch (err) {
-        showError(err.message);
-      }
-    }
-
-    // ════════════════════════════════════════════════════════
-    //  EVENTOS DE FORMULARIO
-    // ════════════════════════════════════════════════════════
-
-    // Re-evaluar botón cuando cambian fecha, hora o datos del cliente
-    [els.inputDate, els.inputName, els.inputPhone].forEach(input => {
-      input.addEventListener('input', updateSubmitButton);
-    });
-
-    els.inputDate.addEventListener('change', () => {
-    state.selectedTime = null;
-    loadAvailableSlots();
-    updateSubmitButton();
-  });
-
-    // Establecer fecha mínima = hoy (no permitir reservas en el pasado)
-    els.inputDate.min = new Date().toISOString().split('T')[0];
-
-    // ── Envío del formulario ──
-    els.btnSubmit.addEventListener('click', async () => {
-      // Ocultar error previo
-      els.submitError.style.display = 'none';
-
-      // Construir el datetime combinando fecha + hora
-      const scheduledAt = new Date(`${els.inputDate.value}T${state.selectedTime}:00`);
-
-      // Preparar el payload para el backend
-      const payload = {
+  try {
+    const res  = await fetch(`${API_BASE}/api/appointments`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
         businessSlug:   state.business.slug,
         serviceId:      state.selectedService.id,
         professionalId: state.selectedPro.id,
-        clientName:     els.inputName.value.trim(),
-        clientPhone:    els.inputPhone.value.trim(),
-        clientEmail:    els.inputEmail.value.trim() || null,
-        scheduledAt:    scheduledAt.toISOString(),
-        notes:          els.inputNotes.value.trim() || null,
-      };
-
-      // Mostrar estado de carga en el botón
-      els.btnSubmit.disabled = true;
-      els.btnSubmit.textContent = 'Enviando...';
-
-      try {
-        const appointment = await submitAppointment(payload);
-
-        // Mostrar pantalla de confirmación
-        els.bookingForm.style.display  = 'none';
-        els.confirmScreen.style.display = 'block';
-        els.confirmDetail.textContent =
-          `${state.selectedService.name} con ${state.selectedPro.name} — ` +
-          formatDateTime(appointment.scheduled_at);
-
-      } catch (err) {
-        // Mostrar el error debajo del botón sin perder el formulario
-        els.submitError.textContent = err.message;
-        els.submitError.style.display = 'block';
-        els.btnSubmit.disabled = false;
-        els.btnSubmit.textContent = 'Confirmar reserva';
-      }
+        clientName:     name,
+        clientPhone:    phone,
+        clientEmail:    email || null,
+        scheduledAt,
+        notes:          notes || null,
+      }),
     });
+    const json = await res.json();
 
-    // ── Arrancar ──
-    init();
-  </script>
+    if (!res.ok) {
+      $('submit-error-text').textContent = json.error || 'Error al crear la reserva';
+      $('submit-error').style.display = 'flex';
+      btn.disabled    = false;
+      btn.textContent = 'Confirmar reserva';
+      return;
+    }
 
+    showConfirmation(json.data, name, phone);
+
+  } catch {
+    $('submit-error-text').textContent = 'Error de conexión con el servidor';
+    $('submit-error').style.display = 'flex';
+    btn.disabled    = false;
+    btn.textContent = 'Confirmar reserva';
+  }
+}
+
+function showConfirmation(appt, name, phone) {
+  // Ocultar steps y stepper
+  document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+  $('steps-bar').style.display = 'none';
+
+  const dateStr = fmtDate(appt.scheduled_at);
+  $('confirm-card').innerHTML = `
+    <div class="confirm-row">
+      <i class="ti ti-tools"></i>
+      <span class="confirm-row-label">Servicio</span>
+      <span class="confirm-row-value">${esc(state.selectedService.name)}</span>
+    </div>
+    <div class="confirm-row">
+      <i class="ti ti-user"></i>
+      <span class="confirm-row-label">Profesional</span>
+      <span class="confirm-row-value">${esc(state.selectedPro.name)}</span>
+    </div>
+    <div class="confirm-row">
+      <i class="ti ti-calendar"></i>
+      <span class="confirm-row-label">Fecha y hora</span>
+      <span class="confirm-row-value">${dateStr}</span>
+    </div>
+    <div class="confirm-row">
+      <i class="ti ti-clock"></i>
+      <span class="confirm-row-label">Duración</span>
+      <span class="confirm-row-value">${state.selectedService.duration_min} minutos</span>
+    </div>
+    <div class="confirm-row">
+      <i class="ti ti-user-check"></i>
+      <span class="confirm-row-label">Cliente</span>
+      <span class="confirm-row-value">${esc(name)}</span>
+    </div>
+    <div class="confirm-row">
+      <i class="ti ti-device-mobile"></i>
+      <span class="confirm-row-label">Teléfono</span>
+      <span class="confirm-row-value">${esc(phone)}</span>
+    </div>`;
+
+  $('confirm-screen').classList.add('show');
+}
+
+// ── INIT ───────────────────────────────────────────────
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const slug   = params.get('negocio');
+
+  if (!slug) {
+    showError('No se especificó ningún negocio. Usa la URL: ?negocio=tu-negocio');
+    return;
+  }
+
+  // Fecha mínima = hoy
+  $('input-date').min = todayLocal();
+
+  try {
+    const [bizRes, svcsRes] = await Promise.all([
+      fetch(`${API_BASE}/api/businesses/${slug}`),
+      fetch(`${API_BASE}/api/businesses/${slug}/services`),
+    ]);
+
+    if (!bizRes.ok) {
+      window.location.href = '404.html';
+      return;
+    }
+
+    if (!svcsRes.ok) throw new Error('services');
+
+    const biz  = (await bizRes.json()).data;
+    const svcs = (await svcsRes.json()).data;
+
+    state.business = biz;
+
+    // Topbar y panel izquierdo
+    $('topbar-biz-name').textContent = biz.name;
+    $('biz-title').textContent       = biz.name;
+    $('biz-avatar').textContent      = initials(biz.name);
+    document.title                   = `${biz.name} — Reserva tu hora`;
+
+    // Meta info
+    const metaItems = [];
+    if (biz.address) metaItems.push(`<div class="biz-meta-item"><i class="ti ti-map-pin"></i>${esc(biz.address)}</div>`);
+    if (biz.phone)   metaItems.push(`<div class="biz-meta-item"><i class="ti ti-phone"></i>${esc(biz.phone)}</div>`);
+    $('biz-meta').innerHTML = metaItems.join('');
+
+    renderServices(svcs);
+
+  } catch (err) {
+    showError('Error al cargar el negocio. Verifica la URL.');
+  }
+}
+
+function validatePhone(phone) {
+  const clean = phone.replace(/[\s\-\(\)\.]/g, '');
+  return /^\+?[1-9]\d{6,14}$/.test(clean);
+}
+
+init();
+</script>
 </body>
 </html>

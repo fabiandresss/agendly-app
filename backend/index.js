@@ -6,9 +6,21 @@ const { scheduleReminderJob } = require('./src/jobs/reminder.job');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS compatible con Express 5
+// Detrás de un proxy (Render, Railway, Nginx…) el rate limiter necesita
+// confiar en X-Forwarded-For o todos los usuarios compartirían una IP.
+// Actívalo con TRUST_PROXY=1 solo si realmente hay un proxy delante.
+if (process.env.TRUST_PROXY) {
+  app.set('trust proxy', Number(process.env.TRUST_PROXY) || process.env.TRUST_PROXY);
+}
+
+// CORS: en producción define CORS_ORIGIN con la URL del frontend
+// (varias separadas por coma). Sin definir, permite cualquier origen.
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : '*';
+
 const corsOptions = {
-  origin: '*',
+  origin: allowedOrigins,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
@@ -18,17 +30,15 @@ app.use(cors(corsOptions));
 // Preflight para Express 5 — usa ruta específica en lugar de '*'
 app.options('/{*path}', cors(corsOptions));
 
-app.use(express.json());
-
-// resto del archivo igual...
+app.use(express.json({ limit: '100kb' }));
 
 // Rutas
 app.use('/api/auth',         require('./src/routes/auth.routes'));
 app.use('/api/businesses',   require('./src/routes/business.routes'));
 app.use('/api/appointments', require('./src/routes/appointment.routes'));
 app.use('/api/availability', require('./src/routes/availability.routes'));
-app.use('/api/dashboard', require('./src/routes/dashboard.routes'));
-app.use('/api/admin',     require('./src/routes/admin.routes'));
+app.use('/api/dashboard',    require('./src/routes/dashboard.routes'));
+app.use('/api/admin',        require('./src/routes/admin.routes'));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -39,6 +49,14 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
+  // JSON mal formado o body demasiado grande: es culpa del cliente, no del servidor
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'El cuerpo de la petición no es un JSON válido' });
+  }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'El cuerpo de la petición es demasiado grande' });
+  }
+
   console.error(err.stack);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
@@ -48,4 +66,3 @@ app.listen(PORT, () => {
 
   scheduleReminderJob();
 });
-

@@ -1,5 +1,5 @@
 // src/jobs/reminder.job.js
-// Job programado que busca reservas del día siguiente y envía recordatorios.
+// Job programado que busca reservas de las próximas 24 horas y envía recordatorios.
 //
 // Se ejecuta cada hora en punto (cron: "0 * * * *").
 // Usa reminder_sent para garantizar que cada cliente recibe exactamente
@@ -10,41 +10,26 @@
 const cron         = require('node-cron');
 const supabase     = require('../config/supabase');
 const notification = require('../services/notification.service');
+const { TZ }       = require('../utils/time');
 
-/**
- * Calcula el rango de timestamps que cubre "mañana completo"
- * en la timezone configurada (America/Santiago).
- *
- * Retorna { start: Date, end: Date } en UTC, que es lo que
- * Supabase almacena internamente.
- */
-function getTomorrowRange() {
-  const now      = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-
-  // Inicio: mañana a las 00:00:00 hora local
-  const start = new Date(tomorrow);
-  start.setHours(0, 0, 0, 0);
-
-  // Fin: mañana a las 23:59:59 hora local
-  const end = new Date(tomorrow);
-  end.setHours(23, 59, 59, 999);
-
-  return { start, end };
-}
+const HOURS_AHEAD = 24;
 
 /**
  * Lógica principal del job.
  * Se puede llamar también manualmente para pruebas.
+ *
+ * Busca reservas que ocurren en las próximas 24 horas y aún no recibieron
+ * recordatorio. Al correr cada hora, cada cliente lo recibe ~24h antes
+ * (y no a medianoche, como pasaba al buscar "todo el día de mañana").
  */
 async function runReminderJob() {
   console.log(`[reminder.job] Ejecutando — ${new Date().toISOString()}`);
 
-  const { start, end } = getTomorrowRange();
+  const now   = new Date();
+  const limit = new Date(now.getTime() + HOURS_AHEAD * 60 * 60 * 1000);
 
   try {
-    // Buscar reservas confirmadas de mañana que NO hayan recibido recordatorio
+    // Reservas pendientes o confirmadas que NO hayan recibido recordatorio
     const { data: appointments, error } = await supabase
       .from('appointments')
       .select(`
@@ -52,14 +37,15 @@ async function runReminderJob() {
         client_name,
         client_phone,
         scheduled_at,
+        cancel_token,
         businesses    ( name ),
         services      ( name ),
         professionals ( name )
       `)
-      .eq('status', 'confirmed')
+      .in('status', ['pending', 'confirmed'])
       .eq('reminder_sent', false)
-      .gte('scheduled_at', start.toISOString())
-      .lte('scheduled_at', end.toISOString());
+      .gt('scheduled_at', now.toISOString())
+      .lte('scheduled_at', limit.toISOString());
 
     if (error) {
       console.error('[reminder.job] Error al consultar reservas:', error.message);
@@ -67,7 +53,7 @@ async function runReminderJob() {
     }
 
     if (!appointments || appointments.length === 0) {
-      console.log('[reminder.job] Sin recordatorios para enviar hoy');
+      console.log('[reminder.job] Sin recordatorios para enviar');
       return;
     }
 
@@ -117,13 +103,10 @@ async function runReminderJob() {
 /**
  * Registra el job en el scheduler de node-cron.
  * "0 * * * *" = al inicio de cada hora (00:00, 01:00, 02:00...)
- *
- * En producción podrías cambiarlo a "0 9 * * *" para que corra
- * una vez al día a las 9am, ya que las reservas tienen 24h de anticipación.
  */
 function scheduleReminderJob() {
   cron.schedule('0 * * * *', runReminderJob, {
-    timezone: 'America/Santiago',
+    timezone: TZ,
   });
 
   console.log('[reminder.job] Programado — corre cada hora en punto');

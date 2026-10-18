@@ -4,19 +4,25 @@
 body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; background: var(--surface-page); }
 
 .ob-topbar {
-  position: sticky; top: 0; z-index: 50; height: 56px; padding: 0 24px; flex-shrink: 0;
+  position: sticky; top: 0; z-index: 50; height: 64px; padding: 0 32px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between;
   background: var(--surface-card); border-bottom: 1px solid var(--border-default);
 }
 .ob-logo { display: flex; align-items: center; text-decoration: none; }
-.ob-top-link { font-size: 13px; font-weight: 600; color: var(--brand-primary); text-decoration: none; }
-.ob-top-link:hover { text-decoration: underline; }
+.ob-top-right { display: flex; align-items: center; gap: 14px; }
+.ob-top-q { font-size: 13.5px; color: var(--text-secondary); }
+.ob-top-cta {
+  display: inline-flex; align-items: center; height: 38px; padding: 0 18px; border-radius: var(--radius-md);
+  font-size: 13.5px; font-weight: 600; color: var(--brand-primary); text-decoration: none;
+  background: var(--brand-primary-light); transition: all var(--transition-fast);
+}
+.ob-top-cta:hover { background: var(--brand-primary); color: #fff; }
 
-.form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 36px 16px 56px; overflow: visible; }
+.form-panel { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 16px 28px; overflow: visible; }
 .form-box, .form-container {
   width: 100%; max-width: 440px;
   background: var(--surface-card); border: 1px solid var(--border-default); border-radius: 20px;
-  padding: 32px 34px 30px;
+  padding: 28px 34px 24px;
   box-shadow: 0 1px 2px rgba(30,27,75,0.04), 0 10px 32px rgba(30,27,75,0.05);
 }
 
@@ -24,4 +30,23 @@ body { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: col
   .ob-topbar { padding: 0 16px; }
   .form-panel { padding: 20px 12px 40px; align-items: flex-start; }
   .form-box, .form-container { padding: 24px 20px 22px; border-radius: 18px; }
+}
+
+/* compacto para que quepa sin scroll en pantallas de escritorio */
+.form-heading, .form-header { margin-bottom: 20px; }
+.form-container { max-width: 620px; }
+.form-footer { margin-top: 14px; }
+
+@media (max-width: 640px) {
+  .ob-top-q { display: none; }
+  .ob-topbar { height: 58px; padding: 0 16px; }
+}
+
+@media (min-width: 641px) {
+  .form-container .form-header { margin-bottom: 16px; }
+  .form-container .form-header h2 { font-size: 24px; }
+  .form-container .mb-4 { margin-bottom: 12px; }
+  .form-container .mb-6 { margin-bottom: 14px; }
+  .form-container .form-footer { display: none; } /* el acceso a "Iniciar sesión" ya está en la barra superior */
+  .form-container { padding: 24px 34px 22px; }
 }

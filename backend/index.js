@@ -1,4 +1,5 @@
-require('dotenv').config();
+// El .env se busca junto a este archivo, no en la carpeta desde la que se lance el proceso
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const express = require('express');
 const cors    = require('cors');
 const { scheduleReminderJob } = require('./src/jobs/reminder.job');
@@ -64,5 +65,11 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`AGENDLY backend corriendo en http://localhost:${PORT}`);
 
-  scheduleReminderJob();
+  // DISABLE_REMINDER_JOB=1 evita que un entorno local envíe recordatorios
+  // reales a las reservas de la base de datos compartida.
+  if (process.env.DISABLE_REMINDER_JOB) {
+    console.log('[reminder.job] Desactivado por DISABLE_REMINDER_JOB');
+  } else {
+    scheduleReminderJob();
+  }
 });

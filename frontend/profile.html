@@ -241,7 +241,7 @@ async function init() {
 
     // Hero
     const photoEl = document.getElementById('biz-photo');
-    if (biz.photo_url && /^https?:\/\//i.test(biz.photo_url)) {
+    if (biz.photo_url && /^(https?:\/\/|assets\/)/i.test(biz.photo_url)) {
       photoEl.innerHTML = `<img src="${esc(biz.photo_url)}" alt="${esc(biz.name)}"/>`;
     } else {
       photoEl.textContent = initials(biz.name);

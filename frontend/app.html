@@ -17,8 +17,13 @@
     .sidebar { background: var(--surface-card); border-right: 1px solid var(--border-default); display: flex; flex-direction: column; height: 100vh; overflow-y: auto; overflow-x: hidden; z-index: 10; }
     .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid var(--border-default); flex-shrink: 0; }
     .sidebar-logo { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--brand-primary); display: flex; align-items: center; gap: 6px; }
-    .sidebar-biz { font-size: 12px; color: var(--text-secondary); margin-top: 4px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sidebar-plan { display: inline-flex; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; background: var(--brand-primary-light); color: var(--brand-primary); padding: 2px 8px; border-radius: var(--radius-pill); margin-top: 6px; }
+    .sidebar-bizcard { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding: 9px 10px; background: var(--surface-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-lg); min-width: 0; }
+    .sb-av { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--brand-primary); color: #fff; font-family: var(--font-display); font-size: 13px; font-weight: 700; letter-spacing: 0.02em; }
+    .sb-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .sb-info { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .sidebar-biz { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sidebar-plan { align-self: flex-start; font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--brand-primary); line-height: 1; display: inline-flex; align-items: center; gap: 4px; }
+    .sidebar-plan::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--brand-primary); opacity: .55; }
 
     .sidebar-nav { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
     .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: 10px 10px 4px; margin-top: 4px; }
@@ -480,8 +485,13 @@
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="sidebar-logo"><img src="assets/logo.png" alt="Agendly" style="height:26px;width:auto;display:block;"></div>
-    <div class="sidebar-biz" id="sb-biz">Cargando...</div>
-    <div class="sidebar-plan" id="sb-plan">FREE</div>
+    <div class="sidebar-bizcard">
+      <div class="sb-av" id="sb-biz-av">·</div>
+      <div class="sb-info">
+        <div class="sidebar-biz" id="sb-biz">Cargando...</div>
+        <div class="sidebar-plan" id="sb-plan">Plan Free</div>
+      </div>
+    </div>
   </div>
 
   <nav class="sidebar-nav">
@@ -1040,8 +1050,7 @@ async function init() {
 
   try {
     S.biz = await api(`/api/businesses/${SLUG}`);
-    document.getElementById('sb-biz').textContent  = S.biz.name;
-    document.getElementById('sb-plan').textContent = (S.biz.plan??'free').toUpperCase();
+    renderSidebarBiz();
     document.getElementById('booking-link').href   = `index.html?negocio=${encodeURIComponent(SLUG)}`;
     document.title = `${S.biz.name} — AGENDLY`;
   } catch(e) { toast(e.message, 'error'); }
@@ -1959,6 +1968,15 @@ async function delBlock(id) {
 const normName  = n => String(n ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 const clientKey = a => String(a.client_phone ?? '').replace(/\D/g, '') + '|' + normName(a.client_name);
 
+function renderSidebarBiz() {
+  const b = S.biz; if (!b) return;
+  document.getElementById('sb-biz').textContent  = b.name;
+  document.getElementById('sb-plan').textContent = 'Plan ' + String(b.plan ?? 'free').replace(/^./, c => c.toUpperCase());
+  const av = document.getElementById('sb-biz-av');
+  if (b.photo_url && /^(https?:\/\/|assets\/)/i.test(b.photo_url)) av.innerHTML = `<img src="${esc(b.photo_url)}" alt="">`;
+  else av.textContent = String(b.name).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
 async function loadClients() {
   try {
     const appts = await api(`/api/businesses/${SLUG}/appointments`);
@@ -2145,7 +2163,7 @@ async function saveBiz() {
         cancellation_min_hours: minHours,
       }),
     });
-    if (S.biz) { Object.assign(S.biz, updated); document.getElementById('sb-biz').textContent = name; }
+    if (S.biz) { Object.assign(S.biz, updated); renderSidebarBiz(); }
     toast('Negocio actualizado', 'success');
   } catch(e){ toast(e.message, 'error'); }
 }

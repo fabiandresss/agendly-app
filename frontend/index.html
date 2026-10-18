@@ -1143,7 +1143,7 @@ async function init() {
     // Encabezado del negocio
     document.title = `${biz.name} — Reserva tu hora`;
     $('biz-title').textContent = biz.name;
-    if (biz.photo_url && /^https?:\/\//i.test(biz.photo_url)) {
+    if (biz.photo_url && /^(https?:\/\/|assets\/)/i.test(biz.photo_url)) {
       $('biz-avatar').innerHTML = `<img src="${esc(biz.photo_url)}" alt="${esc(biz.name)}"/>`;
     } else {
       $('biz-avatar').textContent = initials(biz.name);

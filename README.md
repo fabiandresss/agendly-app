@@ -63,6 +63,8 @@ python .claude/dev_server.py 5500 frontend
 Todas las páginas están pensadas para celular (probadas en 375 px, tablet y escritorio):
 
 - Campos de 16 px (evita el zoom automático de iPhone) y botones/enlaces de al menos 40 px de alto.
+- Página de reservas del cliente: encabezado compacto con el nombre y contacto del negocio, horarios en 4 columnas
+  y botones Volver/Continuar fijos al pie de la pantalla (al alcance del pulgar).
 - En el panel, el menú lateral es un cajón con fondo oscuro, y las reservas se muestran como tarjetas con sus
   acciones a la vista en vez de una tabla con scroll lateral.
 - Calendario en celular: **Día** y **Semana** pasan a una agenda por día, **Mes** muestra puntos de color por

@@ -425,13 +425,71 @@
 
     /* ── MOBILE ── */
     @media (max-width: 768px) {
-      .booking-layout { grid-template-columns: 1fr; }
-      .biz-panel { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border-default); padding: 20px; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 16px; }
-      .biz-header { flex-direction: row; align-items: center; }
-      .biz-meta, .biz-divider, .selection-summary { display: none; }
-      .form-panel { padding: 20px 16px; }
-      .form-row { grid-template-columns: 1fr; }
+      body { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+
+      /* Barra superior: solo el logo (el nombre del negocio va en la tarjeta de abajo) */
+      .booking-topbar { height: 52px; padding: 0 16px; }
+      .biz-name-tag { display: none; }
+
+      /* El contenido ocupa el alto restante, sin repartir espacio entre filas */
+      .booking-layout { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+      /* Tarjeta del negocio compacta: avatar + nombre, y contacto en una línea */
+      .biz-panel {
+        position: static; height: auto; overflow: visible;
+        display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2px 12px;
+        padding: 14px 16px; border-right: none; border-bottom: 1px solid var(--border-default);
+      }
+      .biz-header { display: contents; }
+      .biz-avatar { width: 42px; height: 42px; font-size: 16px; border-radius: var(--radius-md); }
+      .biz-title { font-size: 17px; }
+      .biz-meta { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; gap: 2px 14px; margin-top: 4px; }
+      .biz-meta-item { font-size: 12px; gap: 5px; }
+      .biz-meta-item i { font-size: 13px; }
+      .biz-divider, .selection-summary { display: none; }
+
+      /* Panel del formulario: ocupa el resto y deja los botones pegados abajo */
+      .form-panel { flex: 1; display: flex; flex-direction: column; overflow: visible; padding: 16px 16px 0; }
+      .error-banner { margin-bottom: 14px; }
+      .steps-bar { margin-bottom: 18px; }
+      .step-dot { width: 26px; height: 26px; font-size: 11.5px; }
+      .step-dot-wrap:not(:last-child)::after { top: 13px; }
       .step-dot-label { display: none; }
+      .step-section.active { display: flex; flex-direction: column; flex: 1; }
+      .step-heading { font-size: 18px; margin-bottom: 4px; }
+      .step-sub { font-size: 13.5px; margin-bottom: 14px; }
+
+      .option-card { padding: 12px; gap: 12px; }
+      .option-card-icon { width: 38px; height: 38px; font-size: 17px; }
+      .option-card-name { font-size: 14.5px; }
+
+      .form-row { grid-template-columns: 1fr; }
+      .contact-form { gap: 12px; }
+      #input-date { max-width: none !important; width: 100%; height: 48px; }
+      .date-picker-wrap { margin-bottom: 16px; }
+      .slots-grid { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+      .slot-btn { padding: 11px 4px; }
+
+      /* Botones de navegación: barra fija al pie, siempre al alcance del pulgar */
+      .step-nav {
+        position: sticky; bottom: 0; z-index: 20;
+        margin: auto -16px 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        padding-top: 12px; border-top: 1px solid var(--border-default);
+        background: var(--surface-card); box-shadow: 0 -4px 14px rgba(30,27,75,0.07);
+        gap: 10px;
+      }
+      .step-section > .options-list, .step-section > #slots-container, .step-section > .contact-form { margin-bottom: 20px; }
+      .step-nav .btn-primary { flex: 1; }
+      .step-nav .btn-ghost { flex-shrink: 0; }
+
+      /* Pantalla final */
+      .confirm-screen { padding: 22px 0 28px; }
+      .confirm-check { width: 60px; height: 60px; margin-bottom: 14px; }
+      .confirm-title { font-size: 21px; }
+      .confirm-detail { margin-bottom: 20px; }
+      .confirm-card { padding: 16px; margin-bottom: 20px; }
+      .confirm-row-label { width: 82px; }
+      .confirm-screen .btn { width: 100%; }
     }
   </style>
   <script src="config.js"></script>
@@ -616,10 +674,10 @@
       <div class="confirm-check">
         <i class="ti ti-check" style="font-size:32px;"></i>
       </div>
-      <div class="confirm-title">¡Reserva confirmada!</div>
+      <div class="confirm-title">¡Reserva registrada!</div>
       <div class="confirm-detail">
-        Te hemos enviado los detalles por WhatsApp.<br/>
-        Te recordaremos 24 horas antes de tu cita.
+        El negocio la confirmará pronto.<br/>
+        Te enviamos los detalles por WhatsApp y te recordaremos antes de tu cita.
       </div>
       <div class="confirm-card" id="confirm-card"></div>
       <button class="btn btn-primary btn-lg" onclick="location.reload()">

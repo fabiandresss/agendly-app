@@ -105,6 +105,97 @@
     .tb-cancel   { background: var(--color-error-light);   color: var(--color-error); }
     .tb-resched  { background: var(--brand-primary-light); color: var(--brand-primary); }
 
+    /* CALENDARIO SEMANAL */
+    .cal-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .cal-controls select { width: auto; min-width: 190px; padding: 7px 12px; font-size: 13px; }
+    .cal-check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+    .cal-nav { display: flex; gap: 6px; align-items: center; }
+    .cal-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--border-default); font-size: 13px; }
+    .cal-range { font-weight: 700; font-size: 15px; font-family: var(--font-display); }
+    .cal-summary { color: var(--text-secondary); font-size: 12.5px; }
+    .cal-legend { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-secondary); }
+    .cal-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+    .cal-scroll { overflow: auto; max-height: calc(100vh - 260px); min-height: 360px; }
+    .cal { display: grid; grid-template-columns: 52px repeat(7, minmax(112px, 1fr)); min-width: 840px; }
+    .cal-corner, .cal-dh { position: sticky; top: 0; z-index: 5; background: var(--surface-card); border-bottom: 1px solid var(--border-default); padding: 8px 6px; }
+    .cal-dh { border-left: 1px solid var(--border-default); display: flex; flex-direction: column; gap: 1px; align-items: center; }
+    .cal-dh span { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .cal-dh b { font-size: 17px; font-family: var(--font-display); color: var(--text-primary); min-width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .cal-dh small { font-size: 11px; color: var(--text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cal-dh.today span { color: var(--brand-primary); }
+    .cal-dh.today b { background: var(--brand-primary); color: #fff; }
+    .cal-dh .cal-blk { color: var(--color-error); font-weight: 600; }
+    .cal-gutter { position: relative; }
+    .cal-gutter span { position: absolute; right: 8px; transform: translateY(-50%); font-size: 11px; color: var(--text-muted); }
+    .cal-col { position: relative; border-left: 1px solid var(--border-default); background-image: repeating-linear-gradient(to bottom, var(--border-default) 0, var(--border-default) 1px, transparent 1px, transparent var(--hp)); }
+    .cal-col.today { background-color: rgba(79,70,229,0.035); }
+    .cal-col.blocked { background-color: var(--color-error-light); background-image: repeating-linear-gradient(135deg, rgba(220,38,38,0.10) 0 6px, transparent 6px 12px); }
+    .cal-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--color-error); z-index: 4; pointer-events: none; }
+    .cal-now::before { content: ''; position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-error); }
+    .cal-ev { position: absolute; border: none; border-left: 3px solid; border-radius: 6px; padding: 2px 6px; text-align: left; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; font-family: var(--font-body); font-size: 11.5px; line-height: 1.3; color: var(--text-primary); z-index: 2; transition: box-shadow 0.12s; }
+    .cal-ev:hover { box-shadow: 0 4px 14px rgba(30,27,75,0.2); z-index: 3; }
+    .cal-ev .t { font-size: 10.5px; opacity: 0.75; font-weight: 600; white-space: nowrap; }
+    .cal-ev .n { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-ev .s { font-size: 10.5px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-ev.compact { flex-direction: row; align-items: center; gap: 5px; }
+    .cal-ev.st-pending   { background: var(--color-warning-light); border-left-color: var(--color-warning); }
+    .cal-ev.st-confirmed { background: var(--color-info-light);    border-left-color: var(--color-info); }
+    .cal-ev.st-completed { background: var(--color-success-light); border-left-color: var(--color-success); }
+    .cal-ev.st-cancelled { background: var(--color-error-light);   border-left-color: var(--color-error); opacity: 0.6; }
+    .cal-ev.st-cancelled .n { text-decoration: line-through; }
+    .cal-empty { grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted); font-size: 13px; }
+    .cal-seg { display: inline-flex; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 3px; gap: 2px; }
+    .cal-seg button { border: none; background: none; padding: 5px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: var(--font-body); }
+    .cal-seg button:hover { color: var(--text-primary); }
+    .cal-seg button.active { background: var(--brand-primary); color: #fff; }
+    .cal-dh.clickable { cursor: pointer; }
+    .cal-dh.clickable:hover { background: var(--surface-subtle); }
+    .cal-dh.pro span { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--text-primary); }
+
+    /* Vista mensual */
+    .cal-month { display: grid; grid-template-columns: repeat(7, minmax(100px, 1fr)); min-width: 720px; }
+    .cal-mh { padding: 8px 6px; text-align: center; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); border-bottom: 1px solid var(--border-default); background: var(--surface-card); position: sticky; top: 0; z-index: 2; }
+    .cal-mc { min-height: 112px; border-left: 1px solid var(--border-default); border-bottom: 1px solid var(--border-default); padding: 6px 6px 8px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; min-width: 0; transition: background 0.12s; }
+    .cal-mc:nth-child(7n+8) { border-left: none; }
+    .cal-mc:hover { background: var(--surface-subtle); }
+    .cal-mc.out { background: rgba(0,0,0,0.018); }
+    .cal-mc.out .cal-mn { color: var(--text-muted); opacity: 0.6; }
+    .cal-mc.blocked { background-color: var(--color-error-light); background-image: repeating-linear-gradient(135deg, rgba(220,38,38,0.10) 0 6px, transparent 6px 12px); }
+    .cal-mc-h { display: flex; justify-content: space-between; align-items: center; }
+    .cal-mn { font-size: 13px; font-weight: 700; min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .cal-mc.today .cal-mn { background: var(--brand-primary); color: #fff; }
+    .cal-mcount { font-size: 11px; color: var(--text-muted); }
+    .cal-chip { border: none; border-left: 3px solid; border-radius: 5px; padding: 2px 6px; font-size: 11.5px; text-align: left; cursor: pointer; font-family: var(--font-body); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
+    .cal-chip .t { opacity: 0.7; font-weight: 600; margin-right: 4px; }
+    .cal-chip:hover { box-shadow: 0 2px 8px rgba(30,27,75,0.18); }
+    .cal-chip.st-pending   { background: var(--color-warning-light); border-left-color: var(--color-warning); }
+    .cal-chip.st-confirmed { background: var(--color-info-light);    border-left-color: var(--color-info); }
+    .cal-chip.st-completed { background: var(--color-success-light); border-left-color: var(--color-success); }
+    .cal-chip.st-cancelled { background: var(--color-error-light);   border-left-color: var(--color-error); opacity: 0.6; text-decoration: line-through; }
+    .cal-more { border: none; background: none; font-size: 11.5px; font-weight: 600; color: var(--brand-primary); cursor: pointer; text-align: left; padding: 1px 6px; font-family: var(--font-body); }
+    .cal-more:hover { text-decoration: underline; }
+    .cal-blkchip { font-size: 11px; font-weight: 600; color: var(--color-error); padding: 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Vista anual */
+    .cal-year { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px 26px; padding: 20px; }
+    .cal-ym-t { display: flex; justify-content: space-between; align-items: baseline; width: 100%; border: none; background: none; padding: 0 2px 6px; font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--text-primary); cursor: pointer; text-transform: capitalize; }
+    .cal-ym-t:hover { color: var(--brand-primary); }
+    .cal-ym-t small { font-family: var(--font-body); font-weight: 500; font-size: 11px; color: var(--text-muted); text-transform: none; }
+    .cal-yg { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .cal-yw { text-align: center; font-size: 10px; font-weight: 700; color: var(--text-muted); padding-bottom: 2px; }
+    .cal-yd { aspect-ratio: 1; border: none; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; font-family: var(--font-body); background: transparent; color: var(--text-secondary); padding: 0; transition: transform 0.1s; }
+    .cal-yd:hover { transform: scale(1.12); box-shadow: 0 0 0 1.5px var(--brand-primary); }
+    .cal-yd.lv1 { background: rgba(79,70,229,0.14); color: var(--text-primary); }
+    .cal-yd.lv2 { background: rgba(79,70,229,0.3);  color: var(--text-primary); }
+    .cal-yd.lv3 { background: rgba(79,70,229,0.55); color: #fff; }
+    .cal-yd.lv4 { background: rgba(79,70,229,0.85); color: #fff; }
+    .cal-yd.blocked { background: var(--color-error-light); color: var(--color-error); }
+    .cal-yd.today { box-shadow: 0 0 0 2px var(--brand-primary); }
+    .cal-ylegend { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; justify-content: flex-end; font-size: 11.5px; color: var(--text-muted); }
+    .cal-ylegend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+    @media (max-width: 700px) { .cal-controls select { min-width: 0; flex: 1; } .cal-year { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); padding: 14px; } }
+
     /* Reagendar: selector de horarios */
     .rslots { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 8px; }
     .rslot { padding: 8px 4px; border-radius: var(--radius-md); border: 1.5px solid var(--border-default); background: var(--surface-card); font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font-body); color: var(--text-primary); transition: all var(--transition-fast); }
@@ -229,6 +320,7 @@
     <div class="nav-label">General</div>
     <button class="nav-item active" data-s="dashboard"     onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
     <button class="nav-item"        data-s="appointments"  onclick="nav('appointments',this)"><i class="ti ti-calendar"></i>Reservas<span class="nav-badge" id="pbadge" style="display:none;"></span></button>
+    <button class="nav-item"        data-s="calendar"      onclick="nav('calendar',this)"><i class="ti ti-calendar-week"></i>Calendario</button>
 
     <div class="nav-label">Gestión</div>
     <button class="nav-item" data-s="services"      onclick="nav('services',this)"><i class="ti ti-tools"></i>Servicios</button>
@@ -360,6 +452,40 @@
     </div>
 
     <!-- ───── SERVICIOS ───── -->
+    <!-- ───── CALENDARIO ───── -->
+    <div class="section" id="sec-calendar">
+      <div class="page-header">
+        <div><h1>Calendario</h1><p>Tus reservas por día, semana, mes o año</p></div>
+        <div class="cal-controls">
+          <div class="cal-seg" role="tablist" aria-label="Vista del calendario">
+            <button data-v="day"   onclick="calSetView('day')">Día</button>
+            <button data-v="week"  onclick="calSetView('week')">Semana</button>
+            <button data-v="month" onclick="calSetView('month')">Mes</button>
+            <button data-v="year"  onclick="calSetView('year')">Año</button>
+          </div>
+          <select id="cal-pro" class="form-input" onchange="renderCalendar()"><option value="">Todos los profesionales</option></select>
+          <label class="cal-check"><input type="checkbox" id="cal-cancelled" onchange="renderCalendar()" style="accent-color:var(--brand-primary);"/> Ver canceladas</label>
+        </div>
+      </div>
+      <div class="cc">
+        <div class="cal-bar">
+          <div class="cal-nav">
+            <button class="icon-btn" onclick="calShift(-1)" aria-label="Período anterior"><i class="ti ti-chevron-left"></i></button>
+            <button class="btn btn-sm btn-secondary" onclick="calToday()">Hoy</button>
+            <button class="icon-btn" onclick="calShift(1)" aria-label="Período siguiente"><i class="ti ti-chevron-right"></i></button>
+            <span class="cal-range" id="cal-range" style="margin-left:8px;"></span>
+          </div>
+          <div class="cal-summary" id="cal-summary"></div>
+          <div class="cal-legend">
+            <span><i style="background:var(--color-warning)"></i>Pendiente</span>
+            <span><i style="background:var(--color-info)"></i>Confirmada</span>
+            <span><i style="background:var(--color-success)"></i>Completada</span>
+          </div>
+        </div>
+        <div id="cal-body"></div>
+      </div>
+    </div>
+
     <div class="section" id="sec-services">
       <div class="page-header">
         <div><h1>Servicios</h1><p>Define lo que ofrece tu negocio</p></div>
@@ -566,6 +692,15 @@
   </div>
 </div>
 
+<!-- MODAL DETALLE DE RESERVA -->
+<div class="moverlay" id="m-appt">
+  <div class="mbox" style="max-width:420px;">
+    <div class="mheader"><span class="mtitle">Detalle de la reserva</span><button class="mclose" onclick="closeM('appt')">×</button></div>
+    <div class="mbody" id="appt-detail"></div>
+    <div class="mfooter" id="appt-actions" style="flex-wrap:wrap;"></div>
+  </div>
+</div>
+
 <!-- MODAL REAGENDAR RESERVA -->
 <div class="moverlay" id="m-resched">
   <div class="mbox" style="max-width:420px;">
@@ -656,8 +791,8 @@ const closeM = id => document.getElementById(`m-${id}`).classList.remove('open')
 document.querySelectorAll('.moverlay').forEach(el => el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }));
 
 // ── NAVIGATION ─────────────────────────────────────────
-const TITLES = { dashboard:'Dashboard', appointments:'Reservas', services:'Servicios', professionals:'Profesionales', schedules:'Horarios', blocks:'Bloqueos', clients:'Clientes', settings:'Configuración' };
-const LOADERS = { dashboard:loadDash, appointments:loadAppts, services:loadSvcs, professionals:loadPros, schedules:loadScheds, blocks:loadBlocks, clients:loadClients, settings:loadSettings };
+const TITLES = { dashboard:'Dashboard', appointments:'Reservas', calendar:'Calendario', services:'Servicios', professionals:'Profesionales', schedules:'Horarios', blocks:'Bloqueos', clients:'Clientes', settings:'Configuración' };
+const LOADERS = { dashboard:loadDash, appointments:loadAppts, calendar:loadCalendar, services:loadSvcs, professionals:loadPros, schedules:loadScheds, blocks:loadBlocks, clients:loadClients, settings:loadSettings };
 
 function nav(section, btn) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -913,12 +1048,300 @@ async function chStatus(id, ns) {
   const i = S.appts.findIndex(a=>a.id===id); if (i<0) return;
   if (ns === 'cancelled' && !confirm(`¿Cancelar la reserva de ${S.appts[i].client_name}?\nSe le avisará al cliente.`)) return;
   const prev = S.appts[i].status;
-  S.appts[i].status = ns; applyApptF();
+  S.appts[i].status = ns; refreshApptViews();
   try {
     await api(`/api/appointments/${id}/status`,{ method:'PATCH', body:JSON.stringify({status:ns,businessSlug:SLUG}) });
     const notified = (ns==='confirmed' || ns==='cancelled') ? ' · se avisó al cliente' : '';
     toast(`Reserva marcada como ${SL[ns].toLowerCase()}${notified}`, 'success');
-  } catch(e) { S.appts[i].status=prev; applyApptF(); toast(e.message,'error'); }
+  } catch(e) { S.appts[i].status=prev; refreshApptViews(); toast(e.message,'error'); }
+}
+
+// Tras cambiar una reserva, refresca la lista y (si está abierto) el calendario
+function refreshApptViews() {
+  applyApptF();
+  if (S.curSection === 'calendar') renderCalendar();
+}
+
+// ════════════════════════════════════
+//  CALENDARIO (día · semana · mes · año)
+// ════════════════════════════════════
+const CAL = { view: 'week', anchor: null, hourPx: 56 };
+try { const v = localStorage.getItem('agendly_cal_view'); if (['day','week','month','year'].includes(v)) CAL.view = v; } catch {}
+
+const _tzFmt = new Intl.DateTimeFormat('en-CA', { timeZone: AGENDLY_TZ, year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hourCycle:'h23' });
+
+// Fecha ("YYYY-MM-DD") y minutos desde medianoche de un instante, en la hora del negocio
+function tzParts(iso) {
+  const p = {}; _tzFmt.formatToParts(new Date(iso)).forEach(x => p[x.type] = x.value);
+  return { date: `${p.year}-${p.month}-${p.day}`, min: (Number(p.hour) % 24) * 60 + Number(p.minute) };
+}
+const dAdd      = (ds, n) => { const [y,m,d] = ds.split('-').map(Number); return new Date(Date.UTC(y, m-1, d+n)).toISOString().slice(0,10); };
+const dWeekday  = ds => { const [y,m,d] = ds.split('-').map(Number); return new Date(Date.UTC(y, m-1, d)).getUTCDay(); };
+const mondayOf  = ds => dAdd(ds, dWeekday(ds) === 0 ? -6 : 1 - dWeekday(ds));
+const addMonths = (ds, n) => { const [y,m] = ds.split('-').map(Number); return new Date(Date.UTC(y, m-1+n, 1)).toISOString().slice(0,10); };
+const lastOfMonth = ds => dAdd(addMonths(ds, 1), -1);
+const todayTz   = () => tzParts(new Date().toISOString()).date;
+const fmtDay    = (ds, o) => new Date(ds + 'T12:00:00Z').toLocaleDateString('es-CL', { timeZone: 'UTC', ...o });
+const hhmm      = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+const cap       = t => t.charAt(0).toUpperCase() + t.slice(1);
+const DAYN      = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const plural    = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+async function loadCalendar() {
+  if (!CAL.anchor) CAL.anchor = todayTz();
+  try {
+    const [appts, blocks, pros] = await Promise.all([
+      api(`/api/businesses/${SLUG}/appointments`),
+      api(`/api/admin/${SLUG}/blocks`).catch(() => []),
+      S.pros.length ? S.pros : api(`/api/admin/${SLUG}/professionals`),
+    ]);
+    S.appts = appts; S.blocks = blocks; S.pros = pros;
+
+    const sel = document.getElementById('cal-pro'), keep = sel.value;
+    sel.innerHTML = '<option value="">Todos los profesionales</option>' +
+      pros.filter(p => p.is_active).map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    sel.value = keep;
+    renderCalendar(true);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Navegación ──
+function calSetView(v) {
+  CAL.view = v;
+  try { localStorage.setItem('agendly_cal_view', v); } catch {}
+  renderCalendar(true);
+}
+function calShift(n) {
+  CAL.anchor = CAL.view === 'day'   ? dAdd(CAL.anchor, n)
+             : CAL.view === 'week'  ? dAdd(CAL.anchor, 7 * n)
+             : CAL.view === 'month' ? addMonths(CAL.anchor, n)
+             :                        addMonths(CAL.anchor, 12 * n);
+  renderCalendar(true);
+}
+function calToday()      { CAL.anchor = todayTz(); renderCalendar(true); }
+function calGoDay(ds)    { CAL.anchor = ds; calSetView('day'); }
+function calGoMonth(ds)  { CAL.anchor = ds; calSetView('month'); }
+
+// Reparte en "carriles" las reservas que se solapan para que no se tapen entre sí
+function layoutDay(list) {
+  list.sort((x, y) => x.start - y.start || x.end - y.end);
+  const groups = []; let cur = null, curEnd = -1;
+  list.forEach(ev => {
+    if (!cur || ev.start >= curEnd) { cur = []; groups.push(cur); curEnd = -1; }
+    cur.push(ev); curEnd = Math.max(curEnd, ev.end);
+  });
+  groups.forEach(g => {
+    const lanes = [];
+    g.forEach(ev => {
+      let l = lanes.findIndex(end => end <= ev.start);
+      if (l < 0) { l = lanes.length; lanes.push(0); }
+      lanes[l] = ev.end; ev.lane = l;
+    });
+    g.forEach(ev => ev.lanes = lanes.length);
+  });
+}
+
+// Datos comunes a todas las vistas: reservas filtradas, agrupadas por día, y bloqueos
+function calContext() {
+  const proF   = document.getElementById('cal-pro').value;
+  const showCx = document.getElementById('cal-cancelled').checked;
+  const evs = S.appts
+    .filter(a => (showCx || a.status !== 'cancelled') && (!proF || a.professional_id === proF))
+    .map(a => {
+      const st = tzParts(a.scheduled_at), dur = a.services?.duration_min ?? 30;
+      const en = a.ends_at ? tzParts(a.ends_at) : null;
+      let end = en && en.date === st.date ? en.min : st.min + dur;
+      if (end <= st.min) end = st.min + dur;
+      return { a, date: st.date, start: st.min, end: Math.min(end, 1440) };
+    });
+  const byDate = {};
+  evs.forEach(ev => (byDate[ev.date] ??= []).push(ev));
+  Object.values(byDate).forEach(l => l.sort((x, y) => x.start - y.start));
+  // Bloqueos (feriados, vacaciones) que caen en un día
+  const blocksOn = d => (S.blocks ?? []).filter(b => b.start_date <= d && d <= b.end_date && (!b.professional_id || !proF || b.professional_id === proF));
+  const fullBlock = d => blocksOn(d).some(b => !b.professional_id || b.professional_id === proF);
+  return { proF, showCx, today: todayTz(), evs, byDate, blocksOn, fullBlock };
+}
+
+const evTip = (ev, when) => `${ev.a.client_name} · ${ev.a.services?.name ?? '—'} · ${ev.a.professionals?.name ?? '—'} · ${when} · ${SL[ev.a.status] ?? ev.a.status}`;
+
+// ── Grilla horaria (vistas Día y Semana) ──
+// cols: [{ headClass, head, evs, today, blocked, onHead }]
+function timeGrid(cols, ctx, minColW, showPro) {
+  let h0 = 8, h1 = 20;
+  cols.forEach(c => c.evs.forEach(ev => { h0 = Math.min(h0, Math.floor(ev.start / 60)); h1 = Math.max(h1, Math.ceil(ev.end / 60)); }));
+  h1 = Math.min(Math.max(h1, h0 + 1), 24);
+  const HP = CAL.hourPx, H = (h1 - h0) * HP;
+  const nowMin = tzParts(new Date().toISOString()).min;
+
+  let html = '<div class="cal-corner"></div>' + cols.map(c =>
+    `<div class="cal-dh ${c.headClass ?? ''} ${c.today ? 'today' : ''} ${c.onHead ? 'clickable' : ''}" ${c.onHead ? `onclick="${c.onHead}"` : ''}>${c.head}</div>`).join('');
+
+  html += `<div class="cal-gutter" style="height:${H}px;">` +
+    Array.from({ length: h1 - h0 }, (_, i) => `<span style="top:${i * HP}px;${i === 0 ? 'transform:none;top:2px;' : ''}">${String(h0 + i).padStart(2,'0')}:00</span>`).join('') + '</div>';
+
+  cols.forEach(c => {
+    layoutDay(c.evs);
+    const now = c.today && nowMin >= h0 * 60 && nowMin <= h1 * 60
+      ? `<div class="cal-now" style="top:${(nowMin - h0 * 60) / 60 * HP}px"></div>` : '';
+    html += `<div class="cal-col ${c.today ? 'today' : ''} ${c.blocked ? 'blocked' : ''}" style="height:${H}px;--hp:${HP}px;">` + now +
+      c.evs.map(ev => {
+        const a = ev.a;
+        const top = (ev.start - h0 * 60) / 60 * HP;
+        const height = Math.max((ev.end - ev.start) / 60 * HP - 2, 22);
+        const left = ev.lane / ev.lanes * 100, width = 100 / ev.lanes;
+        const compact = height < 44;
+        const when = `${hhmm(ev.start)} – ${hhmm(ev.end)}`;
+        return `<button type="button" class="cal-ev st-${esc(a.status)} ${compact ? 'compact' : ''}" title="${esc(evTip(ev, when))}" onclick="openApptDetail('${esc(a.id)}')"
+                  style="top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${width}% - 4px);">
+          ${compact
+            ? (ev.lanes > 1 ? `<span class="n">${esc(a.client_name)}</span>` : `<span class="t">${hhmm(ev.start)}</span><span class="n">${esc(a.client_name)}</span>`)
+            : `<span class="t">${when}</span><span class="n">${esc(a.client_name)}</span><span class="s">${esc(a.services?.name ?? '—')}${showPro ? ' · ' + esc(a.professionals?.name ?? '') : ''}</span>`}
+        </button>`;
+      }).join('') + '</div>';
+  });
+
+  // Si la hora actual cae fuera del rango visible, se enfoca la primera reserva
+  const focusToday = cols.some(c => c.today) && nowMin >= h0 * 60 && nowMin <= h1 * 60;
+  const firstEv = Math.min(...cols.flatMap(c => c.evs.map(e => e.start)), Infinity);
+  return {
+    html: `<div class="cal-scroll" id="cal-scroll"><div class="cal" style="grid-template-columns:52px repeat(${cols.length}, minmax(${minColW}px, 1fr));min-width:${52 + cols.length * minColW}px;">${html}</div></div>`,
+    scrollTop: Math.max(0, ((focusToday ? nowMin : (isFinite(firstEv) ? firstEv : h0 * 60)) - h0 * 60) / 60 * HP - 100),
+  };
+}
+
+function viewWeek(ctx) {
+  const ws = mondayOf(CAL.anchor), days = Array.from({ length: 7 }, (_, i) => dAdd(ws, i));
+  const cols = days.map(d => {
+    const evs = ctx.byDate[d] ?? [], n = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
+    return {
+      today: d === ctx.today, evs: [...evs], blocked: ctx.fullBlock(d), onHead: `calGoDay('${d}')`,
+      head: `<span>${DAYN[dWeekday(d)]}</span><b>${Number(d.slice(8))}</b><small>${bl.length ? `<span class="cal-blk" title="${esc(bl.map(b => b.name).join(', '))}">🚫 ${esc(bl[0].name)}</span>` : plural(n, 'reserva', 'reservas')}</small>`,
+    };
+  });
+  const g = timeGrid(cols, ctx, 112, !ctx.proF);
+  return { ...g, range: `${fmtDay(days[0], { day:'numeric', month:'short' })} – ${fmtDay(days[6], { day:'numeric', month:'short', year:'numeric' })}`, dates: days };
+}
+
+function viewDay(ctx) {
+  const d = CAL.anchor, evs = ctx.byDate[d] ?? [], bl = ctx.blocksOn(d);
+  // Una columna por profesional (todos los activos, más los que tengan reservas ese día)
+  let pros = S.pros.filter(p => p.is_active);
+  evs.forEach(ev => { if (!pros.some(p => p.id === ev.a.professional_id)) pros.push({ id: ev.a.professional_id, name: ev.a.professionals?.name ?? 'Profesional' }); });
+  if (ctx.proF) pros = pros.filter(p => p.id === ctx.proF);
+
+  const cols = pros.length ? pros.map(p => {
+    const mine = evs.filter(e => e.a.professional_id === p.id), n = mine.filter(e => e.a.status !== 'cancelled').length;
+    const blocked = (S.blocks ?? []).some(b => b.start_date <= d && d <= b.end_date && (!b.professional_id || b.professional_id === p.id));
+    return { today: d === ctx.today, evs: mine, blocked, headClass: 'pro', head: `<span>${esc(p.name)}</span><small>${blocked ? '<span class="cal-blk">🚫 No atiende</span>' : plural(n, 'reserva', 'reservas')}</small>` };
+  }) : [{ today: d === ctx.today, evs: [...evs], blocked: ctx.fullBlock(d), headClass: 'pro', head: `<span>Reservas</span><small>${plural(evs.length, 'reserva', 'reservas')}</small>` }];
+
+  const g = timeGrid(cols, ctx, 190, false);
+  return { ...g, range: cap(fmtDay(d, { weekday:'long', day:'numeric', month:'long', year:'numeric' })), dates: [d],
+           note: bl.length ? `🚫 ${bl.map(b => b.name).join(', ')}` : '' };
+}
+
+// ── Vista mensual ──
+function viewMonth(ctx) {
+  const first = CAL.anchor.slice(0, 8) + '01', last = lastOfMonth(first);
+  const gridStart = mondayOf(first), gridEnd = dAdd(mondayOf(last), 6);
+  const cells = []; for (let d = gridStart; d <= gridEnd; d = dAdd(d, 1)) cells.push(d);
+
+  let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(n => `<div class="cal-mh">${n}</div>`).join('');
+  cells.forEach(d => {
+    const evs = ctx.byDate[d] ?? [], act = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
+    const shown = evs.slice(0, 3), more = evs.length - shown.length;
+    html += `<div class="cal-mc ${d < first || d > last ? 'out' : ''} ${d === ctx.today ? 'today' : ''} ${ctx.fullBlock(d) ? 'blocked' : ''}" onclick="calGoDay('${d}')">
+      <div class="cal-mc-h"><span class="cal-mn">${Number(d.slice(8))}</span>${act ? `<span class="cal-mcount">${act}</span>` : ''}</div>
+      ${bl.length ? `<div class="cal-blkchip" title="${esc(bl.map(b => b.name).join(', '))}">🚫 ${esc(bl[0].name)}</div>` : ''}
+      ${shown.map(ev => `<button type="button" class="cal-chip st-${esc(ev.a.status)}" title="${esc(evTip(ev, hhmm(ev.start)))}" onclick="event.stopPropagation();openApptDetail('${esc(ev.a.id)}')"><span class="t">${hhmm(ev.start)}</span>${esc(ev.a.client_name)}</button>`).join('')}
+      ${more > 0 ? `<button type="button" class="cal-more" onclick="event.stopPropagation();calGoDay('${d}')">+${more} más</button>` : ''}
+    </div>`;
+  });
+  return { html: `<div class="cal-scroll" style="max-height:none;"><div class="cal-month">${html}</div></div>`,
+           range: cap(fmtDay(first, { month:'long', year:'numeric' })), dates: cells.filter(d => d >= first && d <= last), scrollTop: null };
+}
+
+// ── Vista anual: 12 mini-meses con mapa de calor ──
+function viewYear(ctx) {
+  const year = Number(CAL.anchor.slice(0, 4));
+  const level = n => n === 0 ? 0 : n <= 2 ? 1 : n <= 5 ? 2 : n <= 9 ? 3 : 4;
+  const dates = [];
+  let html = '';
+  for (let m = 1; m <= 12; m++) {
+    const first = `${year}-${String(m).padStart(2, '0')}-01`, last = lastOfMonth(first);
+    const lead = (dWeekday(first) + 6) % 7;            // huecos antes del día 1 (semana desde lunes)
+    let total = 0, cells = '<span class="cal-yw">L</span><span class="cal-yw">M</span><span class="cal-yw">M</span><span class="cal-yw">J</span><span class="cal-yw">V</span><span class="cal-yw">S</span><span class="cal-yw">D</span>' + '<span></span>'.repeat(lead);
+    for (let d = first; d <= last; d = dAdd(d, 1)) {
+      dates.push(d);
+      const n = (ctx.byDate[d] ?? []).filter(e => e.a.status !== 'cancelled').length; total += n;
+      const blocked = ctx.fullBlock(d);
+      cells += `<button type="button" class="cal-yd lv${level(n)} ${blocked ? 'blocked' : ''} ${d === ctx.today ? 'today' : ''}" title="${esc(cap(fmtDay(d, { weekday:'long', day:'numeric', month:'long' })) + ' — ' + plural(n, 'reserva', 'reservas') + (blocked ? ' · sin atención' : ''))}" onclick="calGoDay('${d}')">${Number(d.slice(8))}</button>`;
+    }
+    html += `<div class="cal-ym"><button type="button" class="cal-ym-t" onclick="calGoMonth('${first}')">${fmtDay(first, { month:'long' })}<small>${total ? plural(total, 'reserva', 'reservas') : ''}</small></button><div class="cal-yg">${cells}</div></div>`;
+  }
+  html += `<div class="cal-ylegend">Menos <i style="background:var(--surface-subtle);border:1px solid var(--border-default)"></i><i style="background:rgba(79,70,229,0.14)"></i><i style="background:rgba(79,70,229,0.3)"></i><i style="background:rgba(79,70,229,0.55)"></i><i style="background:rgba(79,70,229,0.85)"></i> Más</div>`;
+  return { html: `<div class="cal-year">${html}</div>`, range: String(year), dates, scrollTop: null };
+}
+
+function renderCalendar(scroll = false) {
+  if (!CAL.anchor) CAL.anchor = todayTz();
+  const ctx = calContext();
+  const r = { day: viewDay, week: viewWeek, month: viewMonth, year: viewYear }[CAL.view](ctx);
+
+  document.getElementById('cal-body').innerHTML = r.html;
+  document.getElementById('cal-range').textContent = r.range;
+  document.querySelectorAll('.cal-seg button').forEach(b => b.classList.toggle('active', b.dataset.v === CAL.view));
+
+  // Resumen del período mostrado
+  const inRange = new Set(r.dates);
+  const active  = ctx.evs.filter(ev => inRange.has(ev.date) && ev.a.status !== 'cancelled');
+  const pend = active.filter(e => e.a.status === 'pending').length, conf = active.filter(e => e.a.status === 'confirmed').length;
+  const label = { day: 'hoy', week: 'esta semana', month: 'este mes', year: 'este año' }[CAL.view];
+  document.getElementById('cal-summary').textContent = active.length
+    ? `${plural(active.length, 'reserva', 'reservas')} · ${plural(pend, 'pendiente', 'pendientes')} · ${plural(conf, 'confirmada', 'confirmadas')}${r.note ? ' · ' + r.note : ''}`
+    : `Sin reservas ${CAL.view === 'day' ? 'este día' : label}${r.note ? ' · ' + r.note : ''}`;
+
+  if (scroll && r.scrollTop != null) {
+    const box = document.getElementById('cal-scroll');
+    if (box) requestAnimationFrame(() => { box.scrollTop = r.scrollTop; });
+  }
+}
+
+// ── Detalle de una reserva (desde el calendario) ──
+let apptDetailId = null;
+
+function openApptDetail(id) {
+  const a = S.appts.find(x => x.id === id); if (!a) return;
+  apptDetailId = id;
+  const wa = String(a.client_phone ?? '').replace(/\D/g, '');
+  const row = (icon, label, val) => `<div style="display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:13.5px;border-bottom:1px solid var(--border-default);">
+      <i class="ti ${icon}" style="font-size:16px;color:var(--brand-primary);margin-top:1px;"></i>
+      <span style="color:var(--text-muted);width:86px;flex-shrink:0;">${label}</span><span style="font-weight:600;word-break:break-word;">${val}</span></div>`;
+  document.getElementById('appt-detail').innerHTML =
+    `<div style="margin-bottom:8px;">${sbadge(a.status)}</div>` +
+    row('ti-user', 'Cliente', esc(a.client_name)) +
+    row('ti-phone', 'Teléfono', `<a href="tel:${esc(a.client_phone)}" style="color:inherit;">${esc(a.client_phone)}</a>` + (wa ? ` · <a href="https://wa.me/${wa}" target="_blank" rel="noopener noreferrer" style="color:var(--brand-primary);">WhatsApp</a>` : '')) +
+    (a.client_email ? row('ti-mail', 'Email', esc(a.client_email)) : '') +
+    row('ti-tools', 'Servicio', esc(a.services?.name ?? '—') + (a.services?.duration_min ? ` <span style="font-weight:400;color:var(--text-muted);">· ${a.services.duration_min} min</span>` : '')) +
+    row('ti-user-check', 'Profesional', esc(a.professionals?.name ?? '—')) +
+    row('ti-calendar', 'Fecha y hora', $DATE(a.scheduled_at)) +
+    (a.notes ? row('ti-note', 'Notas', esc(a.notes)) : '');
+
+  const pending = a.status === 'pending', confirmed = a.status === 'confirmed';
+  document.getElementById('appt-actions').innerHTML = (pending || confirmed)
+    ? `<button class="btn btn-sm btn-danger" onclick="apptAct('cancelled')"><i class="ti ti-x"></i>Cancelar</button>
+       <button class="btn btn-sm btn-secondary" onclick="apptAct('resched')"><i class="ti ti-calendar-event"></i>Reagendar</button>
+       ${pending   ? `<button class="btn btn-sm btn-primary" onclick="apptAct('confirmed')"><i class="ti ti-check"></i>Confirmar</button>` : ''}
+       ${confirmed ? `<button class="btn btn-sm btn-primary" onclick="apptAct('completed')"><i class="ti ti-circle-check"></i>Completar</button>` : ''}`
+    : `<button class="btn btn-sm btn-secondary" onclick="closeM('appt')">Cerrar</button>`;
+  openM('appt');
+}
+
+function apptAct(kind) {
+  const id = apptDetailId; closeM('appt');
+  if (!id) return;
+  if (kind === 'resched') openResched(id); else chStatus(id, kind);
 }
 
 // ── Reagendar desde el panel ──
@@ -974,7 +1397,7 @@ async function confirmResched() {
     const r = await api(`/api/appointments/${a.id}/reschedule`, { method:'POST', body:JSON.stringify({ businessSlug:SLUG, scheduledAt:`${date}T${reschedTime}` }) });
     a.scheduled_at = r.scheduled_at; a.ends_at = r.ends_at; a.status = r.status;
     S.appts.sort((x,y)=>x.scheduled_at.localeCompare(y.scheduled_at));
-    closeM('resched'); applyApptF();
+    closeM('resched'); refreshApptViews();
     toast('Reserva reagendada · se avisó al cliente', 'success');
   } catch(e) { eTx.textContent = e.message; eEl.classList.add('visible'); }
   finally { btn.textContent = 'Confirmar nuevo horario'; btn.disabled = !reschedTime; }

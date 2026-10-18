@@ -22,6 +22,10 @@ cp .env.example .env     # completa los valores
 npm start                # o: node index.js
 ```
 
+**Base de datos:** en Supabase → SQL Editor ejecuta una sola vez
+[`backend/db/anti-doble-reserva.sql`](backend/db/anti-doble-reserva.sql). Crea una restricción que impide que
+un profesional tenga dos reservas activas que se solapen, incluso si dos clientes reservan a la vez.
+
 Variables en [`backend/.env.example`](backend/.env.example). Las imprescindibles son las de Supabase;
 sin Twilio/Resend la app funciona, solo que no envía notificaciones.
 
@@ -45,7 +49,6 @@ de VS Code, puerto 5500).
 | `index.html?negocio=slug` | Cliente | Reservar hora |
 | `cancel.html?token=…`, `reschedule.html?token=…` | Cliente | Cancelar / reagendar con el link recibido |
 
-`admin.html` y `dashboard.html` son la primera versión del panel; hoy todo vive en `app.html`.
 
 ## Reglas de agenda
 
@@ -54,6 +57,7 @@ de VS Code, puerto 5500).
 - Un profesional puede tener varios tramos por día. La reserva debe caber completa en un tramo.
 - Los **bloqueos** (feriados, vacaciones) cierran la agenda del negocio o de un profesional.
 - Un profesional sin servicios asignados ofrece todos.
+- Doble reserva imposible: la base de datos rechaza una reserva que se solape con otra activa del mismo profesional.
 - Un recordatorio por WhatsApp sale ~24 h antes de cada reserva pendiente o confirmada.
 
 ## Pruebas manuales

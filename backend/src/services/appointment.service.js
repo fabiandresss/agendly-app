@@ -15,6 +15,17 @@ function httpError(message, statusCode) {
   return err;
 }
 
+// Postgres: exclusion_violation. La tabla appointments tiene la restricción
+// appointments_no_overlap (ver backend/db/anti-doble-reserva.sql): aunque dos
+// clientes pasen la validación a la vez, la base rechaza la segunda reserva.
+const EXCLUSION_VIOLATION = '23P01';
+
+function throwIfOverlap(error) {
+  if (error && error.code === EXCLUSION_VIOLATION) {
+    throw httpError('El profesional ya tiene una reserva en ese horario', 409);
+  }
+}
+
 // ─────────────────────────────────────────────────────────
 //  VALIDACIONES DE HORARIO / BLOQUEOS / CONFLICTOS
 // ─────────────────────────────────────────────────────────
@@ -164,6 +175,7 @@ async function createAppointment({
     .select() // retorna el registro creado
     .single();
 
+  throwIfOverlap(error);
   if (error) throw error;
   return data;
 }
@@ -212,6 +224,8 @@ async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
     .select()
     .single();
 
+  // Reactivar una reserva cancelada puede chocar con otra ya tomada en ese horario
+  throwIfOverlap(error);
   if (error) {
     if (error.code === 'PGRST116') throw httpError('Reserva no encontrada', 404);
     // UUID mal formado en la URL
@@ -465,6 +479,7 @@ async function rescheduleByToken(token, scheduled) {
     .select()
     .single();
 
+  throwIfOverlap(updateErr);
   if (updateErr) throw updateErr;
 
   // Retornar con datos completos para la notificación

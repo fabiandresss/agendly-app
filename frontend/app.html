@@ -208,6 +208,7 @@
     .fchip { padding: 4px 13px; border-radius: var(--radius-pill); font-size: 12.5px; font-weight: 600; border: 1.5px solid var(--border-default); background: var(--surface-card); color: var(--text-secondary); cursor: pointer; transition: all var(--transition-fast); font-family: var(--font-body); }
     .fchip:hover  { border-color: var(--brand-primary); color: var(--brand-primary); }
     .fchip.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
+    .fchip-sm { padding: 3px 10px; font-size: 12px; }
     .swrap { position: relative; margin-left: auto; }
     .swrap i { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; pointer-events: none; }
     .sbox { padding: 6px 11px 6px 30px; border: 1.5px solid var(--border-default); border-radius: var(--radius-md); font-size: 13px; background: var(--surface-card); color: var(--text-primary); outline: none; width: 190px; font-family: var(--font-body); transition: border-color var(--transition-fast); }
@@ -292,7 +293,94 @@
     .top-svc-rank { width: 20px; height: 20px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
     .top-svc-bar  { height: 4px; background: var(--brand-primary); border-radius: 2px; transition: width 0.4s; }
 
+    /* Cajón del menú: fondo oscuro para poder cerrarlo tocando fuera */
+    .sidebar-backdrop { display: none; }
+    /* Calendario: agenda (móvil) */
+    .cal-agenda { padding: 4px 0 8px; }
+    .cal-ag-d { border-bottom: 1px solid var(--border-default); padding: 4px 14px 12px; }
+    .cal-ag-d:last-child { border-bottom: none; }
+    .cal-ag-d.blocked { background-color: var(--color-error-light); }
+    .cal-ag-h { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0 4px; gap: 10px; }
+    .cal-ag-h b { font-size: 14.5px; font-family: var(--font-display); }
+    .cal-ag-h span { font-size: 12.5px; color: var(--text-secondary); margin-left: 6px; }
+    .cal-ag-h small { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+    .cal-ag-h.today b { color: var(--brand-primary); }
+    .cal-ag-r { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; border: none; border-left: 3px solid; border-radius: 8px; padding: 10px 12px; margin-top: 6px; cursor: pointer; font-family: var(--font-body); color: var(--text-primary); min-height: 56px; }
+    .cal-ag-r.st-pending   { background: var(--color-warning-light); border-left-color: var(--color-warning); }
+    .cal-ag-r.st-confirmed { background: var(--color-info-light);    border-left-color: var(--color-info); }
+    .cal-ag-r.st-completed { background: var(--color-success-light); border-left-color: var(--color-success); }
+    .cal-ag-r.st-cancelled { background: var(--color-error-light);   border-left-color: var(--color-error); opacity: 0.65; }
+    .cal-ag-r.st-cancelled .inf b { text-decoration: line-through; }
+    .cal-ag-r .tm { font-weight: 700; font-size: 14px; display: flex; flex-direction: column; min-width: 44px; }
+    .cal-ag-r .tm small { font-weight: 500; font-size: 11px; opacity: 0.7; }
+    .cal-ag-r .inf { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .cal-ag-r .inf b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-ag-r .inf small { font-size: 12px; opacity: 0.75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cal-ag-e { font-size: 12.5px; color: var(--text-muted); padding: 4px 0 2px; }
+    .cal-dots { display: none; }
+    .cal-dots i { width: 7px; height: 7px; border-radius: 50%; display: block; }
+    .cal-dots i.st-pending   { background: var(--color-warning); }
+    .cal-dots i.st-confirmed { background: var(--color-info); }
+    .cal-dots i.st-completed { background: var(--color-success); }
+    .cal-dots i.st-cancelled { background: var(--color-error); opacity: 0.5; }
+
+    @media (max-width: 700px) {
+      .app-layout .main-content { padding: 14px 12px 32px; }
+      .topbar { padding: 0 12px; }
+      .page-header { margin-bottom: 16px; }
+
+      /* Filtros y búsqueda: zonas táctiles cómodas */
+      .fchip, .fchip-sm { padding: 8px 14px; font-size: 13px; }
+      /* Letra de 16px en campos: evita el zoom automático de iOS al enfocar */
+      body input:not([type="checkbox"]):not([type="radio"]), body select, body textarea { font-size: 16px; }
+      .stnav-item { padding: 11px 12px; font-size: 14px; }
+      .btn-sm { min-height: 38px; }
+      .swrap { margin-left: 0; width: 100%; }
+      .sbox { width: 100%; padding: 10px 12px 10px 32px; font-size: 16px; }
+      .cal-controls { width: 100%; }
+      .cal-seg { width: 100%; }
+      .cal-seg button { flex: 1; padding: 9px 6px; }
+      .cal-check { padding: 6px 2px; font-size: 13.5px; }
+      .cal-check input { width: 20px; height: 20px; }
+      .cal-bar { padding: 10px 12px; }
+      .cal-nav .icon-btn { width: 40px; height: 40px; }
+      .cal-nav .btn { min-height: 40px; }
+      .cal-ym-t { padding: 8px 2px 10px; min-height: 40px; align-items: center; }
+      .cal-controls select { font-size: 16px; padding: 10px 12px; flex: 1 1 100%; }
+
+      /* Mes: cuadrícula compacta con puntos por estado */
+      .cal-month { min-width: 0; grid-template-columns: repeat(7, 1fr); }
+      .cal-mc { min-height: 58px; padding: 4px 2px; align-items: center; }
+      .cal-mc-h { justify-content: center; }
+      .cal-mcount, .cal-chip, .cal-more, .cal-blkchip { display: none; }
+      .cal-dots { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; margin-top: 2px; }
+      .cal-year { grid-template-columns: 1fr; gap: 18px; padding: 14px; }
+
+      /* Tablas de reservas → tarjetas (las acciones quedan a la vista, sin scroll lateral) */
+      .dtable.stack, .dtable.stack tbody, .dtable.stack tr, .dtable.stack td { display: block; width: 100%; }
+      .dtable.stack thead { display: none; }
+      .dtable.stack tr { width: auto; margin: 10px 12px; padding: 10px 14px; border: 1px solid var(--border-default); border-radius: var(--radius-lg); background: var(--surface-card); }
+      .dtable.stack tr:hover td { background: none; }
+      .dtable.stack td { border: none; padding: 4px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; text-align: right; }
+      .dtable.stack td[data-label]::before { content: attr(data-label); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); text-align: left; flex-shrink: 0; }
+      .dtable.stack td.first { display: block; text-align: left; padding: 0 0 8px; margin-bottom: 4px; border-bottom: 1px solid var(--border-default); }
+      .dtable.stack td.actions-cell { display: block; padding-top: 10px; }
+      .dtable.stack .tactions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+      .tbtn { padding: 10px 8px; font-size: 12.5px; }
+
+      /* Modales: hoja inferior, con scroll interno si el contenido es largo */
+      .moverlay { padding: 12px; align-items: flex-end; }
+      .mbox { max-height: calc(100dvh - 24px); }
+      .mbody { padding: 16px; }
+      .mfooter { padding: 12px 16px; flex-wrap: wrap; }
+      .mfooter .btn { min-height: 42px; }
+      .mcard-actions .btn { min-height: 40px; }
+    }
+
     @media (max-width: 900px) {
+      .sidebar { height: 100dvh; }
+      .sidebar-backdrop { display: block; position: fixed; inset: 0; background: rgba(15,12,60,0.4); opacity: 0; pointer-events: none; transition: opacity 0.2s; z-index: 99; }
+      .sidebar-backdrop.show { opacity: 1; pointer-events: auto; }
       .app-layout { grid-template-columns: 1fr; }
       .sidebar { position: fixed; left: 0; top: 0; bottom: 0; transform: translateX(-100%); transition: transform var(--transition-slow); z-index: 100; width: 255px; box-shadow: var(--shadow-lg); }
       .sidebar.open { transform: translateX(0); }
@@ -309,6 +397,7 @@
 <div class="app-layout">
 
 <!-- ════════════ SIDEBAR ════════════ -->
+<div class="sidebar-backdrop" id="sb-backdrop" onclick="toggleSidebar(false)"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="sidebar-logo"><img src="assets/logo.png" alt="Agendly" style="height:26px;width:auto;display:block;"></div>
@@ -349,7 +438,7 @@
 <div class="main-area">
   <div class="topbar">
     <div class="topbar-left">
-      <button class="icon-btn hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menú">
+      <button class="icon-btn hamburger" onclick="toggleSidebar()" aria-label="Menú">
         <i class="ti ti-menu-2"></i>
       </button>
       <div class="topbar-title" id="ttitle">Dashboard</div>
@@ -383,9 +472,9 @@
       <div class="cc-header">
         <span class="cc-title">Reservas por período</span>
         <div style="display:flex;gap:4px;">
-          <button class="fchip active" style="padding:3px 10px;font-size:12px;" onclick="chPeriod('day',this)">Días</button>
-          <button class="fchip"        style="padding:3px 10px;font-size:12px;" onclick="chPeriod('week',this)">Semanas</button>
-          <button class="fchip"        style="padding:3px 10px;font-size:12px;" onclick="chPeriod('month',this)">Meses</button>
+          <button class="fchip fchip-sm active" onclick="chPeriod('day',this)">Días</button>
+          <button class="fchip fchip-sm"        onclick="chPeriod('week',this)">Semanas</button>
+          <button class="fchip fchip-sm"        onclick="chPeriod('month',this)">Meses</button>
         </div>
       </div>
       <div class="cc-body chart-wrap"><canvas id="chart-period" height="200"></canvas></div>
@@ -415,7 +504,7 @@
       <button class="btn btn-sm btn-ghost" onclick="nav('appointments',document.querySelector('[data-s=appointments]'))">Ver todas</button>
     </div>
     <div class="tbl-wrap">
-      <table class="dtable">
+      <table class="dtable stack">
         <thead><tr><th>Cliente</th><th>Servicio</th><th>Fecha</th><th>Estado</th></tr></thead>
         <tbody id="d-recent"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-muted);">Cargando...</td></tr></tbody>
       </table>
@@ -443,7 +532,7 @@
           </div>
         </div>
         <div class="tbl-wrap">
-          <table class="dtable">
+          <table class="dtable stack">
             <thead><tr><th>Cliente</th><th>Servicio</th><th>Profesional</th><th>Fecha y hora</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody id="appts-body"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted);">Cargando...</td></tr></tbody>
           </table>
@@ -794,6 +883,14 @@ document.querySelectorAll('.moverlay').forEach(el => el.addEventListener('click'
 const TITLES = { dashboard:'Dashboard', appointments:'Reservas', calendar:'Calendario', services:'Servicios', professionals:'Profesionales', schedules:'Horarios', blocks:'Bloqueos', clients:'Clientes', settings:'Configuración' };
 const LOADERS = { dashboard:loadDash, appointments:loadAppts, calendar:loadCalendar, services:loadSvcs, professionals:loadPros, schedules:loadScheds, blocks:loadBlocks, clients:loadClients, settings:loadSettings };
 
+// Cajón del menú (móvil): se cierra al elegir una sección o al tocar fuera
+function toggleSidebar(force) {
+  const sb = document.getElementById('sidebar');
+  const open = force ?? !sb.classList.contains('open');
+  sb.classList.toggle('open', open);
+  document.getElementById('sb-backdrop').classList.toggle('show', open);
+}
+
 function nav(section, btn) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   btn?.classList.add('active');
@@ -801,7 +898,7 @@ function nav(section, btn) {
   document.getElementById(`sec-${section}`).classList.add('active');
   document.getElementById('ttitle').textContent = TITLES[section] ?? section;
   S.curSection = section;
-  document.getElementById('sidebar').classList.remove('open');
+  toggleSidebar(false);
   LOADERS[section]?.();
 }
 function refresh() { LOADERS[S.curSection]?.(); }
@@ -994,10 +1091,10 @@ function renderRecent(appts) {
   if (!appts.length) { tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Sin reservas aún</td></tr>'; return; }
   tb.innerHTML = appts.map(a=>`
     <tr>
-      <td><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
-      <td>${esc(a.services?.name??'—')}</td>
-      <td style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
-      <td>${sbadge(a.status)}</td>
+      <td class="first"><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
+      <td data-label="Servicio">${esc(a.services?.name??'—')}</td>
+      <td data-label="Fecha" style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
+      <td data-label="Estado">${sbadge(a.status)}</td>
     </tr>`).join('');
 }
 
@@ -1030,11 +1127,11 @@ function renderAppts(appts) {
   tb.innerHTML = appts.map(a => {
     const cc=a.status==='pending', ck=a.status==='confirmed', ca=a.status==='pending'||a.status==='confirmed';
     return `<tr>
-      <td><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
-      <td>${esc(a.services?.name??'—')}</td><td>${esc(a.professionals?.name??'—')}</td>
-      <td style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
-      <td>${sbadge(a.status)}</td>
-      <td><div class="tactions">
+      <td class="first"><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
+      <td data-label="Servicio">${esc(a.services?.name??'—')}</td><td data-label="Profesional">${esc(a.professionals?.name??'—')}</td>
+      <td data-label="Fecha" style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
+      <td data-label="Estado">${sbadge(a.status)}</td>
+      <td class="actions-cell"><div class="tactions">
         <button class="tbtn tb-confirm"  onclick="chStatus('${a.id}','confirmed')"  ${!cc?'disabled':''}>Confirmar</button>
         <button class="tbtn tb-resched"  onclick="openResched('${a.id}')"            ${!ca?'disabled':''}>Reagendar</button>
         <button class="tbtn tb-complete" onclick="chStatus('${a.id}','completed')"  ${!ck?'disabled':''}>Completar</button>
@@ -1086,6 +1183,26 @@ const hhmm      = m => `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%6
 const cap       = t => t.charAt(0).toUpperCase() + t.slice(1);
 const DAYN      = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const plural    = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+const calIsMobile = () => window.matchMedia('(max-width: 700px)').matches;
+window.matchMedia('(max-width: 700px)').addEventListener('change', () => { if (S.curSection === 'calendar' && CAL.anchor) renderCalendar(); });
+
+// Lista por día (móvil): reemplaza a la grilla horaria de Día y Semana
+function viewAgenda(ctx, dates, range, note = '') {
+  const html = dates.map(d => {
+    const evs = ctx.byDate[d] ?? [], act = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
+    const list = evs.length
+      ? evs.map(ev => `<button type="button" class="cal-ag-r st-${esc(ev.a.status)}" onclick="openApptDetail('${esc(ev.a.id)}')">
+          <span class="tm">${hhmm(ev.start)}<small>${hhmm(ev.end)}</small></span>
+          <span class="inf"><b>${esc(ev.a.client_name)}</b><small>${esc(ev.a.services?.name ?? '—')}${ctx.proF ? '' : ' · ' + esc(ev.a.professionals?.name ?? '')}</small></span>
+          ${sbadge(ev.a.status)}</button>`).join('')
+      : '<div class="cal-ag-e">Sin reservas</div>';
+    return `<div class="cal-ag-d ${ctx.fullBlock(d) ? 'blocked' : ''}">
+      <div class="cal-ag-h ${d === ctx.today ? 'today' : ''}"><div><b>${cap(fmtDay(d, { weekday: 'long' }))}</b><span>${fmtDay(d, { day: 'numeric', month: 'long' })}</span></div>
+      <small>${bl.length ? '🚫 ' + esc(bl[0].name) : plural(act, 'reserva', 'reservas')}</small></div>${list}</div>`;
+  }).join('');
+  return { html: `<div class="cal-agenda">${html}</div>`, range, dates, note, scrollTop: null };
+}
 
 async function loadCalendar() {
   if (!CAL.anchor) CAL.anchor = todayTz();
@@ -1212,6 +1329,7 @@ function timeGrid(cols, ctx, minColW, showPro) {
 
 function viewWeek(ctx) {
   const ws = mondayOf(CAL.anchor), days = Array.from({ length: 7 }, (_, i) => dAdd(ws, i));
+  if (calIsMobile()) return viewAgenda(ctx, days, `${fmtDay(days[0], { day:'numeric', month:'short' })} – ${fmtDay(days[6], { day:'numeric', month:'short', year:'numeric' })}`);
   const cols = days.map(d => {
     const evs = ctx.byDate[d] ?? [], n = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
     return {
@@ -1225,6 +1343,7 @@ function viewWeek(ctx) {
 
 function viewDay(ctx) {
   const d = CAL.anchor, evs = ctx.byDate[d] ?? [], bl = ctx.blocksOn(d);
+  if (calIsMobile()) return viewAgenda(ctx, [d], cap(fmtDay(d, { weekday:'long', day:'numeric', month:'long', year:'numeric' })));
   // Una columna por profesional (todos los activos, más los que tengan reservas ese día)
   let pros = S.pros.filter(p => p.is_active);
   evs.forEach(ev => { if (!pros.some(p => p.id === ev.a.professional_id)) pros.push({ id: ev.a.professional_id, name: ev.a.professionals?.name ?? 'Profesional' }); });
@@ -1253,6 +1372,7 @@ function viewMonth(ctx) {
     const shown = evs.slice(0, 3), more = evs.length - shown.length;
     html += `<div class="cal-mc ${d < first || d > last ? 'out' : ''} ${d === ctx.today ? 'today' : ''} ${ctx.fullBlock(d) ? 'blocked' : ''}" onclick="calGoDay('${d}')">
       <div class="cal-mc-h"><span class="cal-mn">${Number(d.slice(8))}</span>${act ? `<span class="cal-mcount">${act}</span>` : ''}</div>
+      <div class="cal-dots">${evs.slice(0, 4).map(ev => `<i class="st-${esc(ev.a.status)}"></i>`).join('')}</div>
       ${bl.length ? `<div class="cal-blkchip" title="${esc(bl.map(b => b.name).join(', '))}">🚫 ${esc(bl[0].name)}</div>` : ''}
       ${shown.map(ev => `<button type="button" class="cal-chip st-${esc(ev.a.status)}" title="${esc(evTip(ev, hhmm(ev.start)))}" onclick="event.stopPropagation();openApptDetail('${esc(ev.a.id)}')"><span class="t">${hhmm(ev.start)}</span>${esc(ev.a.client_name)}</button>`).join('')}
       ${more > 0 ? `<button type="button" class="cal-more" onclick="event.stopPropagation();calGoDay('${d}')">+${more} más</button>` : ''}

@@ -35,7 +35,11 @@ sin Twilio/Resend la app funciona, solo que no envía notificaciones.
 ### Frontend
 
 Sirve la carpeta `frontend/` con cualquier servidor estático (por ejemplo la extensión *Live Server*
-de VS Code, puerto 5500).
+de VS Code, puerto 5500). Alternativa sin instalar nada y sin caché:
+
+```bash
+python .claude/dev_server.py 5500 frontend
+```
 
 - En `localhost` el frontend usa `http://localhost:3000` como API.
 - En producción edita `AGENDLY_PROD_API` en [`frontend/config.js`](frontend/config.js) con la URL de tu backend,
@@ -53,6 +57,17 @@ de VS Code, puerto 5500).
 | `index.html?negocio=slug` | Cliente | Reservar hora |
 | `cancel.html?token=…`, `reschedule.html?token=…` | Cliente | Cancelar / reagendar con el link recibido |
 
+
+## Modo móvil
+
+Todas las páginas están pensadas para celular (probadas en 375 px, tablet y escritorio):
+
+- Campos de 16 px (evita el zoom automático de iPhone) y botones/enlaces de al menos 40 px de alto.
+- En el panel, el menú lateral es un cajón con fondo oscuro, y las reservas se muestran como tarjetas con sus
+  acciones a la vista en vez de una tabla con scroll lateral.
+- Calendario en celular: **Día** y **Semana** pasan a una agenda por día, **Mes** muestra puntos de color por
+  estado (se toca un día para abrirlo) y **Año** apila los 12 meses.
+- Los modales se abren como hoja inferior y hacen scroll interno si el contenido es largo.
 
 ## Reglas de agenda
 

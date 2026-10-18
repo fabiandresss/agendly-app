@@ -108,6 +108,7 @@
       background: var(--surface-subtle);
     }
     .dynamic-item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 420px) { .dynamic-item-grid { grid-template-columns: 1fr; } .dynamic-item-grid > * { grid-column: 1 / -1 !important; } }
     .dynamic-item-remove {
       position: absolute;
       top: 12px; right: 12px;
@@ -115,9 +116,12 @@
       border: none;
       cursor: pointer;
       color: var(--text-muted);
-      font-size: 18px;
+      font-size: 20px;
       line-height: 1;
-      padding: 2px;
+      padding: 0;
+      width: 36px; height: 36px;
+      top: 6px; right: 6px;
+      display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-sm);
       transition: color var(--transition-fast);
     }

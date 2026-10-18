@@ -14,6 +14,11 @@
       max-width:480px;width:100%;box-shadow:var(--shadow-md);
     }
     .logo { font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--brand-primary);display:flex;align-items:center;gap:5px;margin-bottom:28px; }
+    .form-actions { display: flex; gap: 10px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border-default); }
+    @media (max-width: 480px) {
+      .form-actions { flex-direction: column-reverse; }
+      .form-actions .btn { width: 100%; }
+    }
     .appt-detail { background:var(--surface-subtle);border:1px solid var(--border-default);border-radius:var(--radius-lg);padding:16px;margin-bottom:22px;display:flex;flex-direction:column;gap:8px; }
     .appt-row { display:flex;align-items:center;gap:10px;font-size:13px; }
     .appt-row i { color:var(--brand-primary);font-size:15px;width:18px;flex-shrink:0; }
@@ -67,7 +72,7 @@
 
     <div class="alert alert-error mt-4" id="form-err" style="display:none;"><span id="form-err-txt"></span></div>
 
-    <div style="display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border-default);">
+    <div class="form-actions">
       <a id="cancel-link" href="#" class="btn btn-secondary">Cancelar reserva</a>
       <button class="btn btn-primary" style="flex:1;" id="btn-reschedule" disabled onclick="confirmReschedule()">
         Confirmar nuevo horario

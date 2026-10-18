@@ -4,14 +4,22 @@
     {
       "name": "backend",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["backend/index.js"],
+      "runtimeArgs": [
+        "backend/index.js"
+      ],
       "port": 3000,
-      "env": { "DISABLE_REMINDER_JOB": "1" }
+      "env": {
+        "DISABLE_REMINDER_JOB": "1"
+      }
     },
     {
       "name": "frontend",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "5500", "--directory", "frontend"],
+      "runtimeArgs": [
+        ".claude/dev_server.py",
+        "5500",
+        "frontend"
+      ],
       "port": 5500
     }
   ]

@@ -76,6 +76,10 @@ Todas las páginas están pensadas para celular (probadas en 375 px, tablet y es
 - Un profesional puede tener varios tramos por día. La reserva debe caber completa en un tramo.
 - Los **bloqueos** (feriados, vacaciones) cierran la agenda del negocio o de un profesional.
 - Un profesional sin servicios asignados ofrece todos.
+- **Reservas vencidas:** una reserva pendiente cuya fecha ya pasó nunca se confirmó, así que se muestra como
+  **Vencida** y ya no se puede confirmar, reagendar ni cancelar (el servidor lo rechaza). No cuenta como pendiente
+  ni como ingreso proyectado; en Reservas tiene su propio filtro y en el calendario se ven al activar
+  "Ver canceladas y vencidas". Una reserva confirmada que ya pasó solo se puede marcar como completada.
 - **Cancelar / reagendar:** el cliente puede hacerlo con su link hasta N horas antes (por defecto 2; se cambia en
   Configuración → Mi negocio → Cancelaciones; 0 = sin restricción). Si ya no está a tiempo, la página le muestra el
   teléfono del negocio. El dueño siempre puede cancelar y reagendar desde el panel, sin esa restricción.

@@ -242,6 +242,26 @@ async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
   const previousStatus = current.status;
   if (previousStatus === newStatus) return { appointment: current, previousStatus };
 
+  // Una reserva cuya fecha ya pasó no se puede confirmar, cancelar ni reactivar:
+  // si nunca se confirmó, queda como "vencida" y ahí se queda.
+  const now     = new Date();
+  const ended   = new Date(current.ends_at ?? current.scheduled_at) < now;
+  const started = new Date(current.scheduled_at) <= now;
+
+  if (ended && newStatus === 'confirmed' && previousStatus === 'pending') {
+    throw httpError('Esta reserva ya pasó sin confirmarse: no se puede confirmar', 409);
+  }
+  if (ended && newStatus === 'cancelled') {
+    throw httpError('La fecha de esta reserva ya pasó: no se puede cancelar', 409);
+  }
+  if (ended && newStatus === 'pending') {
+    throw httpError('No se puede reactivar una reserva cuya fecha ya pasó', 409);
+  }
+  if (newStatus === 'completed') {
+    if (previousStatus !== 'confirmed') throw httpError('Solo una reserva confirmada puede marcarse como completada', 409);
+    if (!started) throw httpError('La reserva aún no ocurre: no se puede marcar como completada', 409);
+  }
+
   const { error } = await supabase
     .from('appointments')
     .update({ status: newStatus })
@@ -429,10 +449,12 @@ async function findByToken(token) {
 function modificationPolicy(appt) {
   const minHours = appt.businesses?.cancellation_min_hours ?? 0;
   const deadline = new Date(new Date(appt.scheduled_at).getTime() - minHours * 3600 * 1000);
+  const past = new Date(appt.ends_at ?? appt.scheduled_at) < new Date();
   return {
     min_hours:  minHours,
     deadline:   minHours > 0 ? deadline.toISOString() : null,
-    can_modify: new Date() <= deadline && new Date(appt.scheduled_at) > new Date(),
+    past,       // la fecha de la reserva ya pasó (no hay nada que cancelar ni reagendar)
+    can_modify: !past && new Date() <= deadline && new Date(appt.scheduled_at) > new Date(),
   };
 }
 
@@ -556,6 +578,9 @@ async function rescheduleByOwner(appointmentId, businessId, scheduled) {
   if (!appt) throw httpError('Reserva no encontrada', 404);
   if (appt.status === 'cancelled') throw httpError('Una reserva cancelada no puede reagendarse', 409);
   if (appt.status === 'completed') throw httpError('Una reserva completada no puede reagendarse', 409);
+  if (new Date(appt.ends_at ?? appt.scheduled_at) < new Date()) {
+    throw httpError('La fecha de esta reserva ya pasó: no se puede reagendar', 409);
+  }
 
   return moveAppointment(appt, scheduled, appt.status);
 }

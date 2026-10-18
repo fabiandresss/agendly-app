@@ -192,6 +192,12 @@
       const pol  = appt.policy;
       const note = document.getElementById('policy-note');
       const phone = appt.businesses?.phone;
+      if (pol.past) {
+        note.className = 'alert alert-error visible';
+        note.textContent = 'La fecha de esta reserva ya pasó, por lo que no se puede cancelar ni reagendar.';
+        disableEls.forEach(el => { el.disabled = true; el.classList.add('disabled'); el.setAttribute('aria-disabled', 'true'); el.removeAttribute('href'); el.removeAttribute('onclick'); });
+        return false;
+      }
       if (!pol.can_modify) {
         note.className = 'alert alert-error visible';
         note.textContent = `Ya no puedes cancelar ni reagendar esta reserva por internet: el negocio lo permite hasta ${pol.min_hours} ${pol.min_hours === 1 ? 'hora' : 'horas'} antes de la cita.` +

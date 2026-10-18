@@ -8,13 +8,18 @@ const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','S
 async function getSummary(businessId) {
   const { data, error } = await supabase
     .from('appointments')
-    .select('status, scheduled_at, services(price, duration_min)')
+    .select('status, scheduled_at, ends_at, services(price, duration_min)')
     .eq('business_id', businessId);
 
   if (error) throw error;
 
+  // Una reserva pendiente cuya fecha ya pasó está "vencida": nunca se confirmó, no
+  // cuenta como pendiente ni como ingreso proyectado.
+  const nowMs     = Date.now();
+  const isPast    = a => new Date(a.ends_at ?? a.scheduled_at).getTime() < nowMs;
   const total     = data.length;
-  const pending   = data.filter(a => a.status === 'pending').length;
+  const pending   = data.filter(a => a.status === 'pending' && !isPast(a)).length;
+  const expired   = data.filter(a => a.status === 'pending' && isPast(a)).length;
   const confirmed = data.filter(a => a.status === 'confirmed').length;
   const completed = data.filter(a => a.status === 'completed').length;
   const cancelled = data.filter(a => a.status === 'cancelled').length;
@@ -28,7 +33,7 @@ async function getSummary(businessId) {
     .reduce((s, a) => s + parseFloat(a.services.price), 0);
 
   const projectedRevenue = data
-    .filter(a => (a.status === 'confirmed' || a.status === 'pending') && a.services?.price)
+    .filter(a => (a.status === 'confirmed' || a.status === 'pending') && !isPast(a) && a.services?.price)
     .reduce((s, a) => s + parseFloat(a.services.price), 0);
 
   const totalMinutes = data
@@ -62,7 +67,7 @@ async function getSummary(businessId) {
   const avgPerDay = last30 > 0 ? (last30 / 30).toFixed(1) : '0';
 
   return {
-    total, pending, confirmed, completed, cancelled,
+    total, pending, expired, confirmed, completed, cancelled,
     last_30_days:       last30,
     last_7_days:        last7,
     cancellation_rate:  cancellationRate,

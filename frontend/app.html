@@ -93,6 +93,11 @@
     .s-completed { background: var(--color-success-light); color: var(--color-success); }
     .s-completed::before { background: var(--color-success); }
     .s-cancelled { background: var(--color-error-light); color: var(--color-error); }
+    .s-expired   { background: #f3f4f6; color: #6b7280; }
+    .s-expired::before { background: #9ca3af; }
+    .row-expired { opacity: 0.85; }
+    .expired-note { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-muted); padding: 4px 0; line-height: 1.35; }
+    .expired-note i { font-size: 15px; flex-shrink: 0; }
     .s-cancelled::before { background: var(--color-error); }
 
     /* TABLE BUTTONS */
@@ -143,6 +148,8 @@
     .cal-ev.st-completed { background: var(--color-success-light); border-left-color: var(--color-success); }
     .cal-ev.st-cancelled { background: var(--color-error-light);   border-left-color: var(--color-error); opacity: 0.6; }
     .cal-ev.st-cancelled .n { text-decoration: line-through; }
+    .cal-ev.st-expired, .cal-chip.st-expired, .cal-ag-r.st-expired { background: #f3f4f6; border-left-color: #9ca3af; opacity: 0.8; }
+    .cal-dots i.st-expired { background: #9ca3af; }
     .cal-empty { grid-column: 1 / -1; text-align: center; padding: 18px; color: var(--text-muted); font-size: 13px; }
     .cal-seg { display: inline-flex; background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 3px; gap: 2px; }
     .cal-seg button { border: none; background: none; padding: 5px 12px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; font-family: var(--font-body); }
@@ -522,6 +529,7 @@
           <div class="fbar">
             <button class="fchip active" onclick="fAppt('all',this)">Todas</button>
             <button class="fchip" onclick="fAppt('pending',this)">Pendientes</button>
+            <button class="fchip" onclick="fAppt('expired',this)">Vencidas</button>
             <button class="fchip" onclick="fAppt('confirmed',this)">Confirmadas</button>
             <button class="fchip" onclick="fAppt('completed',this)">Completadas</button>
             <button class="fchip" onclick="fAppt('cancelled',this)">Canceladas</button>
@@ -553,7 +561,7 @@
             <button data-v="year"  onclick="calSetView('year')">Año</button>
           </div>
           <select id="cal-pro" class="form-input" onchange="renderCalendar()"><option value="">Todos los profesionales</option></select>
-          <label class="cal-check"><input type="checkbox" id="cal-cancelled" onchange="renderCalendar()" style="accent-color:var(--brand-primary);"/> Ver canceladas</label>
+          <label class="cal-check"><input type="checkbox" id="cal-cancelled" onchange="renderCalendar()" style="accent-color:var(--brand-primary);"/> Ver canceladas y vencidas</label>
         </div>
       </div>
       <div class="cc">
@@ -569,6 +577,7 @@
             <span><i style="background:var(--color-warning)"></i>Pendiente</span>
             <span><i style="background:var(--color-info)"></i>Confirmada</span>
             <span><i style="background:var(--color-success)"></i>Completada</span>
+            <span><i style="background:#9ca3af"></i>Vencida</span>
           </div>
         </div>
         <div id="cal-body"></div>
@@ -909,7 +918,13 @@ const $DATE = iso => new Date(iso).toLocaleString('es-CL',{weekday:'short',day:'
 // Las fechas de bloqueos vienen como 'YYYY-MM-DD': a mediodía para que la zona horaria no las corra un día
 const $DS   = iso => new Date(String(iso).length === 10 ? iso + 'T12:00:00' : iso).toLocaleDateString('es-CL',{day:'numeric',month:'short',year:'numeric'});
 const INIT  = name => name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-const SL    = {pending:'Pendiente',confirmed:'Confirmada',completed:'Completada',cancelled:'Cancelada'};
+const SL    = {pending:'Pendiente',confirmed:'Confirmada',completed:'Completada',cancelled:'Cancelada',expired:'Vencida'};
+
+// Una reserva "pending" cuya fecha ya pasó nunca se confirmó: se muestra como "Vencida"
+// y no admite confirmar, reagendar ni cancelar (el servidor también lo rechaza).
+const isPastAppt = a => new Date(a.ends_at || a.scheduled_at) < new Date();
+const effStatus  = a => (a.status === 'pending' && isPastAppt(a)) ? 'expired' : a.status;
+const EXPIRED_NOTE = '<div class="expired-note"><i class="ti ti-clock-off"></i><span>Fecha pasada · nunca se confirmó</span></div>';
 const DAYS  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const sbadge = s => `<span class="sbadge s-${s}">${SL[s]??s}</span>`;
 
@@ -992,7 +1007,7 @@ function renderMetrics(s) {
       <div class="metric-icon" style="background:var(--color-warning-light);color:var(--color-warning);"><i class="ti ti-clock"></i></div>
       <div class="metric-label">Pendientes</div>
       <div class="metric-value c-yellow">${s.pending ?? 0}</div>
-      <div class="metric-sub">Confirmadas: ${s.confirmed ?? 0}</div>
+      <div class="metric-sub">Confirmadas: ${s.confirmed ?? 0}${s.expired ? ` · Vencidas: ${s.expired}` : ''}</div>
     </div>
     <div class="metric-card">
       <div class="metric-icon" style="background:var(--color-success-light);color:var(--color-success);"><i class="ti ti-check"></i></div>
@@ -1094,7 +1109,7 @@ function renderRecent(appts) {
       <td class="first"><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
       <td data-label="Servicio">${esc(a.services?.name??'—')}</td>
       <td data-label="Fecha" style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
-      <td data-label="Estado">${sbadge(a.status)}</td>
+      <td data-label="Estado">${sbadge(effStatus(a))}</td>
     </tr>`).join('');
 }
 
@@ -1116,7 +1131,7 @@ function srchAppt(v) { clearTimeout(srchTmr); srchTmr=setTimeout(()=>{ S.apptSea
 
 function applyApptF() {
   let d = S.appts;
-  if (S.apptFilter!=='all') d=d.filter(a=>a.status===S.apptFilter);
+  if (S.apptFilter!=='all') d=d.filter(a=>effStatus(a)===S.apptFilter);
   if (S.apptSearch) d=d.filter(a=>a.client_name.toLowerCase().includes(S.apptSearch)||(a.client_phone??'').includes(S.apptSearch));
   renderAppts(d);
 }
@@ -1125,18 +1140,19 @@ function renderAppts(appts) {
   const tb = document.getElementById('appts-body');
   if (!appts.length) { tb.innerHTML=`<tr><td colspan="6"><div class="empty"><i class="ti ti-calendar-x"></i><h3>No hay reservas</h3><p>Sin resultados para este filtro</p></div></td></tr>`; return; }
   tb.innerHTML = appts.map(a => {
-    const cc=a.status==='pending', ck=a.status==='confirmed', ca=a.status==='pending'||a.status==='confirmed';
-    return `<tr>
+    const st = effStatus(a), past = isPastAppt(a), started = new Date(a.scheduled_at) <= new Date();
+    const cc = st==='pending', ck = st==='confirmed' && started, ca = (st==='pending' || st==='confirmed') && !past;
+    return `<tr class="${st==='expired' ? 'row-expired' : ''}">
       <td class="first"><div style="font-weight:600;">${esc(a.client_name)}</div><div style="font-size:11px;color:var(--text-muted);">${esc(a.client_phone)}</div></td>
       <td data-label="Servicio">${esc(a.services?.name??'—')}</td><td data-label="Profesional">${esc(a.professionals?.name??'—')}</td>
       <td data-label="Fecha" style="white-space:nowrap;font-size:12px;">${$DATE(a.scheduled_at)}</td>
-      <td data-label="Estado">${sbadge(a.status)}</td>
-      <td class="actions-cell"><div class="tactions">
+      <td data-label="Estado">${sbadge(effStatus(a))}</td>
+      <td class="actions-cell">${st === 'expired' ? EXPIRED_NOTE : `<div class="tactions">
         <button class="tbtn tb-confirm"  onclick="chStatus('${a.id}','confirmed')"  ${!cc?'disabled':''}>Confirmar</button>
         <button class="tbtn tb-resched"  onclick="openResched('${a.id}')"            ${!ca?'disabled':''}>Reagendar</button>
         <button class="tbtn tb-complete" onclick="chStatus('${a.id}','completed')"  ${!ck?'disabled':''}>Completar</button>
         <button class="tbtn tb-cancel"   onclick="chStatus('${a.id}','cancelled')"  ${!ca?'disabled':''}>Cancelar</button>
-      </div></td>
+      </div>`}</td>
     </tr>`;
   }).join('');
 }
@@ -1190,12 +1206,12 @@ window.matchMedia('(max-width: 700px)').addEventListener('change', () => { if (S
 // Lista por día (móvil): reemplaza a la grilla horaria de Día y Semana
 function viewAgenda(ctx, dates, range, note = '') {
   const html = dates.map(d => {
-    const evs = ctx.byDate[d] ?? [], act = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
+    const evs = ctx.byDate[d] ?? [], act = evs.filter(e => isActiveEv(e)).length, bl = ctx.blocksOn(d);
     const list = evs.length
-      ? evs.map(ev => `<button type="button" class="cal-ag-r st-${esc(ev.a.status)}" onclick="openApptDetail('${esc(ev.a.id)}')">
+      ? evs.map(ev => `<button type="button" class="cal-ag-r st-${esc(ev.eff)}" onclick="openApptDetail('${esc(ev.a.id)}')">
           <span class="tm">${hhmm(ev.start)}<small>${hhmm(ev.end)}</small></span>
           <span class="inf"><b>${esc(ev.a.client_name)}</b><small>${esc(ev.a.services?.name ?? '—')}${ctx.proF ? '' : ' · ' + esc(ev.a.professionals?.name ?? '')}</small></span>
-          ${sbadge(ev.a.status)}</button>`).join('')
+          ${sbadge(ev.eff)}</button>`).join('')
       : '<div class="cal-ag-e">Sin reservas</div>';
     return `<div class="cal-ag-d ${ctx.fullBlock(d) ? 'blocked' : ''}">
       <div class="cal-ag-h ${d === ctx.today ? 'today' : ''}"><div><b>${cap(fmtDay(d, { weekday: 'long' }))}</b><span>${fmtDay(d, { day: 'numeric', month: 'long' })}</span></div>
@@ -1262,25 +1278,29 @@ function layoutDay(list) {
 function calContext() {
   const proF   = document.getElementById('cal-pro').value;
   const showCx = document.getElementById('cal-cancelled').checked;
-  const evs = S.appts
-    .filter(a => (showCx || a.status !== 'cancelled') && (!proF || a.professional_id === proF))
+  // Todas las reservas (del profesional filtrado) con su estado efectivo; las canceladas y
+  // las vencidas se ocultan salvo que se pida verlas.
+  const base = S.appts
+    .filter(a => !proF || a.professional_id === proF)
     .map(a => {
       const st = tzParts(a.scheduled_at), dur = a.services?.duration_min ?? 30;
       const en = a.ends_at ? tzParts(a.ends_at) : null;
       let end = en && en.date === st.date ? en.min : st.min + dur;
       if (end <= st.min) end = st.min + dur;
-      return { a, date: st.date, start: st.min, end: Math.min(end, 1440) };
+      return { a, eff: effStatus(a), date: st.date, start: st.min, end: Math.min(end, 1440) };
     });
+  const evs = base.filter(ev => showCx || (ev.eff !== 'cancelled' && ev.eff !== 'expired'));
   const byDate = {};
   evs.forEach(ev => (byDate[ev.date] ??= []).push(ev));
   Object.values(byDate).forEach(l => l.sort((x, y) => x.start - y.start));
   // Bloqueos (feriados, vacaciones) que caen en un día
   const blocksOn = d => (S.blocks ?? []).filter(b => b.start_date <= d && d <= b.end_date && (!b.professional_id || !proF || b.professional_id === proF));
   const fullBlock = d => blocksOn(d).some(b => !b.professional_id || b.professional_id === proF);
-  return { proF, showCx, today: todayTz(), evs, byDate, blocksOn, fullBlock };
+  return { proF, showCx, today: todayTz(), evs, base, byDate, blocksOn, fullBlock };
 }
 
-const evTip = (ev, when) => `${ev.a.client_name} · ${ev.a.services?.name ?? '—'} · ${ev.a.professionals?.name ?? '—'} · ${when} · ${SL[ev.a.status] ?? ev.a.status}`;
+const evTip = (ev, when) => `${ev.a.client_name} · ${ev.a.services?.name ?? '—'} · ${ev.a.professionals?.name ?? '—'} · ${when} · ${SL[ev.eff] ?? ev.eff}`;
+const isActiveEv = e => e.eff !== 'cancelled' && e.eff !== 'expired';
 
 // ── Grilla horaria (vistas Día y Semana) ──
 // cols: [{ headClass, head, evs, today, blocked, onHead }]
@@ -1309,7 +1329,7 @@ function timeGrid(cols, ctx, minColW, showPro) {
         const left = ev.lane / ev.lanes * 100, width = 100 / ev.lanes;
         const compact = height < 44;
         const when = `${hhmm(ev.start)} – ${hhmm(ev.end)}`;
-        return `<button type="button" class="cal-ev st-${esc(a.status)} ${compact ? 'compact' : ''}" title="${esc(evTip(ev, when))}" onclick="openApptDetail('${esc(a.id)}')"
+        return `<button type="button" class="cal-ev st-${esc(ev.eff)} ${compact ? 'compact' : ''}" title="${esc(evTip(ev, when))}" onclick="openApptDetail('${esc(a.id)}')"
                   style="top:${top}px;height:${height}px;left:calc(${left}% + 2px);width:calc(${width}% - 4px);">
           ${compact
             ? (ev.lanes > 1 ? `<span class="n">${esc(a.client_name)}</span>` : `<span class="t">${hhmm(ev.start)}</span><span class="n">${esc(a.client_name)}</span>`)
@@ -1331,7 +1351,7 @@ function viewWeek(ctx) {
   const ws = mondayOf(CAL.anchor), days = Array.from({ length: 7 }, (_, i) => dAdd(ws, i));
   if (calIsMobile()) return viewAgenda(ctx, days, `${fmtDay(days[0], { day:'numeric', month:'short' })} – ${fmtDay(days[6], { day:'numeric', month:'short', year:'numeric' })}`);
   const cols = days.map(d => {
-    const evs = ctx.byDate[d] ?? [], n = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
+    const evs = ctx.byDate[d] ?? [], n = evs.filter(e => isActiveEv(e)).length, bl = ctx.blocksOn(d);
     return {
       today: d === ctx.today, evs: [...evs], blocked: ctx.fullBlock(d), onHead: `calGoDay('${d}')`,
       head: `<span>${DAYN[dWeekday(d)]}</span><b>${Number(d.slice(8))}</b><small>${bl.length ? `<span class="cal-blk" title="${esc(bl.map(b => b.name).join(', '))}">🚫 ${esc(bl[0].name)}</span>` : plural(n, 'reserva', 'reservas')}</small>`,
@@ -1350,7 +1370,7 @@ function viewDay(ctx) {
   if (ctx.proF) pros = pros.filter(p => p.id === ctx.proF);
 
   const cols = pros.length ? pros.map(p => {
-    const mine = evs.filter(e => e.a.professional_id === p.id), n = mine.filter(e => e.a.status !== 'cancelled').length;
+    const mine = evs.filter(e => e.a.professional_id === p.id), n = mine.filter(e => isActiveEv(e)).length;
     const blocked = (S.blocks ?? []).some(b => b.start_date <= d && d <= b.end_date && (!b.professional_id || b.professional_id === p.id));
     return { today: d === ctx.today, evs: mine, blocked, headClass: 'pro', head: `<span>${esc(p.name)}</span><small>${blocked ? '<span class="cal-blk">🚫 No atiende</span>' : plural(n, 'reserva', 'reservas')}</small>` };
   }) : [{ today: d === ctx.today, evs: [...evs], blocked: ctx.fullBlock(d), headClass: 'pro', head: `<span>Reservas</span><small>${plural(evs.length, 'reserva', 'reservas')}</small>` }];
@@ -1368,13 +1388,13 @@ function viewMonth(ctx) {
 
   let html = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'].map(n => `<div class="cal-mh">${n}</div>`).join('');
   cells.forEach(d => {
-    const evs = ctx.byDate[d] ?? [], act = evs.filter(e => e.a.status !== 'cancelled').length, bl = ctx.blocksOn(d);
+    const evs = ctx.byDate[d] ?? [], act = evs.filter(e => isActiveEv(e)).length, bl = ctx.blocksOn(d);
     const shown = evs.slice(0, 3), more = evs.length - shown.length;
     html += `<div class="cal-mc ${d < first || d > last ? 'out' : ''} ${d === ctx.today ? 'today' : ''} ${ctx.fullBlock(d) ? 'blocked' : ''}" onclick="calGoDay('${d}')">
       <div class="cal-mc-h"><span class="cal-mn">${Number(d.slice(8))}</span>${act ? `<span class="cal-mcount">${act}</span>` : ''}</div>
-      <div class="cal-dots">${evs.slice(0, 4).map(ev => `<i class="st-${esc(ev.a.status)}"></i>`).join('')}</div>
+      <div class="cal-dots">${evs.slice(0, 4).map(ev => `<i class="st-${esc(ev.eff)}"></i>`).join('')}</div>
       ${bl.length ? `<div class="cal-blkchip" title="${esc(bl.map(b => b.name).join(', '))}">🚫 ${esc(bl[0].name)}</div>` : ''}
-      ${shown.map(ev => `<button type="button" class="cal-chip st-${esc(ev.a.status)}" title="${esc(evTip(ev, hhmm(ev.start)))}" onclick="event.stopPropagation();openApptDetail('${esc(ev.a.id)}')"><span class="t">${hhmm(ev.start)}</span>${esc(ev.a.client_name)}</button>`).join('')}
+      ${shown.map(ev => `<button type="button" class="cal-chip st-${esc(ev.eff)}" title="${esc(evTip(ev, hhmm(ev.start)))}" onclick="event.stopPropagation();openApptDetail('${esc(ev.a.id)}')"><span class="t">${hhmm(ev.start)}</span>${esc(ev.a.client_name)}</button>`).join('')}
       ${more > 0 ? `<button type="button" class="cal-more" onclick="event.stopPropagation();calGoDay('${d}')">+${more} más</button>` : ''}
     </div>`;
   });
@@ -1394,7 +1414,7 @@ function viewYear(ctx) {
     let total = 0, cells = '<span class="cal-yw">L</span><span class="cal-yw">M</span><span class="cal-yw">M</span><span class="cal-yw">J</span><span class="cal-yw">V</span><span class="cal-yw">S</span><span class="cal-yw">D</span>' + '<span></span>'.repeat(lead);
     for (let d = first; d <= last; d = dAdd(d, 1)) {
       dates.push(d);
-      const n = (ctx.byDate[d] ?? []).filter(e => e.a.status !== 'cancelled').length; total += n;
+      const n = (ctx.byDate[d] ?? []).filter(e => isActiveEv(e)).length; total += n;
       const blocked = ctx.fullBlock(d);
       cells += `<button type="button" class="cal-yd lv${level(n)} ${blocked ? 'blocked' : ''} ${d === ctx.today ? 'today' : ''}" title="${esc(cap(fmtDay(d, { weekday:'long', day:'numeric', month:'long' })) + ' — ' + plural(n, 'reserva', 'reservas') + (blocked ? ' · sin atención' : ''))}" onclick="calGoDay('${d}')">${Number(d.slice(8))}</button>`;
     }
@@ -1415,12 +1435,14 @@ function renderCalendar(scroll = false) {
 
   // Resumen del período mostrado
   const inRange = new Set(r.dates);
-  const active  = ctx.evs.filter(ev => inRange.has(ev.date) && ev.a.status !== 'cancelled');
-  const pend = active.filter(e => e.a.status === 'pending').length, conf = active.filter(e => e.a.status === 'confirmed').length;
+  const active  = ctx.evs.filter(ev => inRange.has(ev.date) && isActiveEv(ev));
+  const pend = active.filter(e => e.eff === 'pending').length, conf = active.filter(e => e.eff === 'confirmed').length;
   const label = { day: 'hoy', week: 'esta semana', month: 'este mes', year: 'este año' }[CAL.view];
+  const venc = ctx.base.filter(ev => inRange.has(ev.date) && ev.eff === 'expired').length;
+  const vencTxt = venc ? ` · ${plural(venc, 'vencida', 'vencidas')}` : '';
   document.getElementById('cal-summary').textContent = active.length
-    ? `${plural(active.length, 'reserva', 'reservas')} · ${plural(pend, 'pendiente', 'pendientes')} · ${plural(conf, 'confirmada', 'confirmadas')}${r.note ? ' · ' + r.note : ''}`
-    : `Sin reservas ${CAL.view === 'day' ? 'este día' : label}${r.note ? ' · ' + r.note : ''}`;
+    ? `${plural(active.length, 'reserva', 'reservas')} · ${plural(pend, 'pendiente', 'pendientes')} · ${plural(conf, 'confirmada', 'confirmadas')}${vencTxt}${r.note ? ' · ' + r.note : ''}`
+    : `Sin reservas ${CAL.view === 'day' ? 'este día' : label}${vencTxt}${r.note ? ' · ' + r.note : ''}`;
 
   if (scroll && r.scrollTop != null) {
     const box = document.getElementById('cal-scroll');
@@ -1439,7 +1461,7 @@ function openApptDetail(id) {
       <i class="ti ${icon}" style="font-size:16px;color:var(--brand-primary);margin-top:1px;"></i>
       <span style="color:var(--text-muted);width:86px;flex-shrink:0;">${label}</span><span style="font-weight:600;word-break:break-word;">${val}</span></div>`;
   document.getElementById('appt-detail').innerHTML =
-    `<div style="margin-bottom:8px;">${sbadge(a.status)}</div>` +
+    `<div style="margin-bottom:8px;">${sbadge(effStatus(a))}</div>` +
     row('ti-user', 'Cliente', esc(a.client_name)) +
     row('ti-phone', 'Teléfono', `<a href="tel:${esc(a.client_phone)}" style="color:inherit;">${esc(a.client_phone)}</a>` + (wa ? ` · <a href="https://wa.me/${wa}" target="_blank" rel="noopener noreferrer" style="color:var(--brand-primary);">WhatsApp</a>` : '')) +
     (a.client_email ? row('ti-mail', 'Email', esc(a.client_email)) : '') +
@@ -1448,13 +1470,17 @@ function openApptDetail(id) {
     row('ti-calendar', 'Fecha y hora', $DATE(a.scheduled_at)) +
     (a.notes ? row('ti-note', 'Notas', esc(a.notes)) : '');
 
-  const pending = a.status === 'pending', confirmed = a.status === 'confirmed';
-  document.getElementById('appt-actions').innerHTML = (pending || confirmed)
-    ? `<button class="btn btn-sm btn-danger" onclick="apptAct('cancelled')"><i class="ti ti-x"></i>Cancelar</button>
-       <button class="btn btn-sm btn-secondary" onclick="apptAct('resched')"><i class="ti ti-calendar-event"></i>Reagendar</button>
-       ${pending   ? `<button class="btn btn-sm btn-primary" onclick="apptAct('confirmed')"><i class="ti ti-check"></i>Confirmar</button>` : ''}
-       ${confirmed ? `<button class="btn btn-sm btn-primary" onclick="apptAct('completed')"><i class="ti ti-circle-check"></i>Completar</button>` : ''}`
-    : `<button class="btn btn-sm btn-secondary" onclick="closeM('appt')">Cerrar</button>`;
+  const eff = effStatus(a), past = isPastAppt(a), started = new Date(a.scheduled_at) <= new Date();
+  if (eff === 'expired') {
+    document.getElementById('appt-detail').insertAdjacentHTML('afterbegin', `<div class="rinfo" style="margin-bottom:12px;">⏳ La fecha ya pasó y esta reserva nunca se confirmó. Ya no se puede confirmar, reagendar ni cancelar.</div>`);
+  }
+  const pending = eff === 'pending', confirmed = eff === 'confirmed';
+  const actions = [];
+  if ((pending || confirmed) && !past) actions.push(`<button class="btn btn-sm btn-danger" onclick="apptAct('cancelled')"><i class="ti ti-x"></i>Cancelar</button>`,
+                                                    `<button class="btn btn-sm btn-secondary" onclick="apptAct('resched')"><i class="ti ti-calendar-event"></i>Reagendar</button>`);
+  if (pending && !past)         actions.push(`<button class="btn btn-sm btn-primary" onclick="apptAct('confirmed')"><i class="ti ti-check"></i>Confirmar</button>`);
+  if (confirmed && started)     actions.push(`<button class="btn btn-sm btn-primary" onclick="apptAct('completed')"><i class="ti ti-circle-check"></i>Completar</button>`);
+  document.getElementById('appt-actions').innerHTML = actions.length ? actions.join('') : `<button class="btn btn-sm btn-secondary" onclick="closeM('appt')">Cerrar</button>`;
   openM('appt');
 }
 
@@ -1469,6 +1495,7 @@ let reschedApt = null, reschedTime = null;
 
 function openResched(id) {
   const a = S.appts.find(x=>x.id===id); if (!a) return;
+  if (isPastAppt(a)) { toast('La fecha de esta reserva ya pasó: no se puede reagendar', 'error'); return; }
   reschedApt = a; reschedTime = null;
   document.getElementById('resched-info').innerHTML =
     `<b>${esc(a.client_name)}</b> · ${esc(a.services?.name??'—')} · ${esc(a.professionals?.name??'—')}<br>Actual: ${$DATE(a.scheduled_at)}`;

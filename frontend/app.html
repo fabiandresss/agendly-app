@@ -123,7 +123,10 @@
     .mcard-name { font-weight: 700; font-size: 14px; }
     .mcard-meta { font-size: 12px; color: var(--text-secondary); display: flex; gap: 12px; flex-wrap: wrap; }
     .mcard-meta span { display: flex; align-items: center; gap: 3px; }
-    .mcard-actions { display: flex; gap: 6px; margin-top: 2px; }
+    .mcard-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    /* Todos los botones de acción: mismo alto, mismo ícono, mismo espaciado */
+    .mcard-actions .btn { height: 32px; padding: 0 12px; gap: 6px; line-height: 1; }
+    .mcard-actions .btn i { font-size: 14px; line-height: 1; }
 
     /* SCHEDULE */
     .sched-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; }
@@ -907,8 +910,8 @@ function renderSvcs(svcs) {
         <span><i class="ti ti-currency-dollar" style="font-size:13px;"></i>${$CLP(s.price)}</span>
       </div>
       <div class="mcard-actions">
-        <button class="btn btn-sm btn-secondary" onclick="editSvc('${s.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
-        <button class="btn btn-sm ${s.is_active?'btn-danger':'btn-secondary'}" onclick="toggleSvc('${s.id}',${!s.is_active})">${s.is_active?'Desactivar':'Activar'}</button>
+        <button class="btn btn-sm btn-secondary" onclick="editSvc('${s.id}')"><i class="ti ti-edit"></i>Editar</button>
+        <button class="btn btn-sm ${s.is_active?'btn-danger':'btn-secondary'}" onclick="toggleSvc('${s.id}',${!s.is_active})"><i class="ti ${s.is_active?'ti-player-pause':'ti-player-play'}"></i>${s.is_active?'Desactivar':'Activar'}</button>
       </div>
     </div>`).join('');
 }
@@ -979,11 +982,11 @@ function renderPros(pros) {
         ${p.email?`<span><i class="ti ti-mail" style="font-size:12px;"></i>${esc(p.email)}</span>`:''}
         ${p.phone?`<span><i class="ti ti-phone" style="font-size:12px;"></i>${esc(p.phone)}</span>`:''}
       </div>
-<div class="mcard-actions" style="flex-wrap:wrap;gap:5px;">
-  <button class="btn btn-sm btn-secondary" onclick="editPro('${p.id}')"><i class="ti ti-edit" style="font-size:12px;"></i>Editar</button>
-  <button class="btn btn-sm btn-secondary" onclick="openProSvcsModal('${p.id}')"><i class="ti ti-tools" style="font-size:12px;"></i>Servicios</button>
-  <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}')"><i class="ti ti-clock" style="font-size:12px;"></i>Horarios</button>
-  <button class="btn btn-sm ${p.is_active?'btn-danger':'btn-secondary'}" onclick="togglePro('${p.id}',${!p.is_active})">${p.is_active?'Desactivar':'Activar'}</button>
+<div class="mcard-actions">
+  <button class="btn btn-sm btn-secondary" onclick="editPro('${p.id}')"><i class="ti ti-edit"></i>Editar</button>
+  <button class="btn btn-sm btn-secondary" onclick="openProSvcsModal('${p.id}')"><i class="ti ti-tools"></i>Servicios</button>
+  <button class="btn btn-sm btn-secondary" onclick="openSchedModal('${p.id}')"><i class="ti ti-clock"></i>Horarios</button>
+  <button class="btn btn-sm ${p.is_active?'btn-danger':'btn-secondary'}" onclick="togglePro('${p.id}',${!p.is_active})"><i class="ti ${p.is_active?'ti-player-pause':'ti-player-play'}"></i>${p.is_active?'Desactivar':'Activar'}</button>
 </div>
     </div>`).join('');
 }

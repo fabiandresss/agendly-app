@@ -106,6 +106,7 @@
       <div class="cancel-title">¿Cancelar tu reserva?</div>
       <div class="cancel-desc">Estás a punto de cancelar la siguiente cita. Esta acción no se puede deshacer.</div>
       <div class="appt-detail" id="appt-detail"></div>
+      <div class="alert" id="policy-note" style="margin:0 0 16px;text-align:left;"></div>
       <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
   <a id="reschedule-link" href="#" class="btn btn-secondary">
     <i class="ti ti-calendar-event" style="font-size:14px;"></i>
@@ -185,6 +186,27 @@
       }
     }
 
+
+    // Política de anticipación mínima del negocio (la valida también el servidor)
+    function applyPolicy(appt, disableEls) {
+      const pol  = appt.policy;
+      const note = document.getElementById('policy-note');
+      const phone = appt.businesses?.phone;
+      if (!pol.can_modify) {
+        note.className = 'alert alert-error visible';
+        note.textContent = `Ya no puedes cancelar ni reagendar esta reserva por internet: el negocio lo permite hasta ${pol.min_hours} ${pol.min_hours === 1 ? 'hora' : 'horas'} antes de la cita.` +
+          (phone ? ` Contáctalos al ${phone}.` : ' Contacta directamente al negocio.');
+        disableEls.forEach(el => { el.disabled = true; el.classList.add('disabled'); el.setAttribute('aria-disabled', 'true'); el.removeAttribute('href'); el.removeAttribute('onclick'); });
+        return false;
+      }
+      if (pol.min_hours > 0 && pol.deadline) {
+        const until = new Date(pol.deadline).toLocaleString('es-CL', { weekday:'long', day:'numeric', month:'long', hour:'2-digit', minute:'2-digit', timeZone: AGENDLY_TZ });
+        note.className = 'alert alert-info visible';
+        note.textContent = `Puedes cancelar o reagendar hasta el ${until}`;
+      }
+      return true;
+    }
+
     async function init() {
       if (!token) {
         showError('Token inválido', 'El enlace de cancelación no es válido.');
@@ -227,6 +249,7 @@
           </div>`;
 
         document.getElementById('back-link').href = `index.html?negocio=${encodeURIComponent(appt.businesses?.slug ?? '')}`;
+        applyPolicy(appt, [document.getElementById('btn-confirm-cancel'), document.getElementById('reschedule-link')]);
         showState('confirm');
 
       } catch {

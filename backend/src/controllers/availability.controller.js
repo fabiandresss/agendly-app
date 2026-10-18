@@ -6,14 +6,16 @@ const businessService     = require('../services/business.service');
 const appointmentService  = require('../services/appointment.service');
 const { todayStr, isValidDateStr } = require('../utils/time');
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * GET /api/availability
  * Query params requeridos: businessSlug, professionalId, serviceId, date
- * Query params opcionales: interval (15 o 30)
+ * Query params opcionales: interval (15 o 30), excludeId (reserva que se está reagendando)
  */
 async function getAvailability(req, res) {
   try {
-    const { businessSlug, professionalId, serviceId, date, interval } = req.query;
+    const { businessSlug, professionalId, serviceId, date, interval, excludeId } = req.query;
 
     const missing = [];
     if (!businessSlug)   missing.push('businessSlug');
@@ -54,6 +56,7 @@ async function getAvailability(req, res) {
       serviceId,
       date,
       intervalMin,
+      excludeId: typeof excludeId === 'string' && UUID_REGEX.test(excludeId) ? excludeId : null,
     });
 
     res.json({

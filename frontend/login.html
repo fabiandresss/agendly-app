@@ -162,6 +162,15 @@
     }
     .form-footer a:hover { text-decoration: underline; }
 
+    .forgot-link {
+      align-self: flex-end;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--brand-primary);
+      text-decoration: none;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+
     @media (max-width: 768px) {
       body { grid-template-columns: 1fr; }
       .brand-panel { display: none; }
@@ -216,6 +225,7 @@
               <i id="pw-icon" class="ti ti-eye"></i>
             </button>
           </div>
+          <a href="forgot-password.html" class="forgot-link">¿Olvidaste tu contraseña?</a>
         </div>
 
         <button type="submit" id="btn-login" class="btn btn-primary btn-lg btn-full">

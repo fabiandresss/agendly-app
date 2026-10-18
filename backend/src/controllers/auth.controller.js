@@ -4,6 +4,7 @@
 const supabaseAdmin   = require('../config/supabaseAdmin');
 const supabase        = require('../config/supabase');
 const businessService = require('../services/business.service');
+const notificationService = require('../services/notification.service');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SLUG_REGEX  = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -104,6 +105,78 @@ async function login(req, res) {
   } catch (err) {
     console.error('[auth.controller] login:', err.message);
     res.status(500).json({ error: 'Error al iniciar sesión' });
+  }
+}
+
+/**
+ * POST /api/auth/forgot-password
+ * Body: { email }
+ * Envía un correo con un enlace de un solo uso para crear una contraseña nueva.
+ * Responde SIEMPRE lo mismo, exista o no el email, para no revelar quién tiene cuenta.
+ */
+async function forgotPassword(req, res) {
+  const GENERIC = { message: 'Si el correo está registrado, te enviamos un enlace para recuperar tu contraseña.' };
+
+  try {
+    const email = String(req.body.email ?? '').trim().toLowerCase();
+    if (!EMAIL_REGEX.test(email)) {
+      return res.status(400).json({ error: 'Ingresa un email válido' });
+    }
+
+    // Responder ya: el envío no debe delatar (por tiempo) si la cuenta existe
+    res.json(GENERIC);
+
+    const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type: 'recovery', email });
+    const tokenHash = data?.properties?.hashed_token;
+    if (error || !tokenHash) return; // email sin cuenta: no se envía nada
+
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5500').replace(/\/+$/, '');
+    const link = `${frontendUrl}/reset-password.html?token=${encodeURIComponent(tokenHash)}`;
+
+    const sent = await notificationService.sendPasswordResetEmail(email, link);
+    if (!sent && process.env.NODE_ENV !== 'production') {
+      // En desarrollo sin Resend configurado, el enlace se ve en la consola del backend
+      console.log(`[auth] (dev) enlace de recuperación para ${email}: ${link}`);
+    }
+  } catch (err) {
+    console.error('[auth.controller] forgotPassword:', err.message);
+    if (!res.headersSent) res.status(500).json({ error: 'No pudimos procesar la solicitud' });
+  }
+}
+
+/**
+ * POST /api/auth/reset-password
+ * Body: { token, newPassword }
+ * Canjea el token del correo (un solo uso, vence en 1 hora) y fija la contraseña nueva.
+ */
+async function resetPassword(req, res) {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'El enlace y la nueva contraseña son requeridos' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
+    }
+
+    // Cliente desechable: ver comentario en config/supabase.js
+    const { data, error: verifyErr } = await supabase.createAuthClient().auth.verifyOtp({
+      token_hash: token,
+      type:       'recovery',
+    });
+    if (verifyErr || !data?.user) {
+      return res.status(400).json({ error: 'El enlace no es válido o ya venció. Solicita uno nuevo.' });
+    }
+
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user.id, { password: newPassword });
+    if (error) throw error;
+
+    res.json({ message: 'Contraseña actualizada. Ya puedes iniciar sesión.' });
+
+  } catch (err) {
+    console.error('[auth.controller] resetPassword:', err.message);
+    res.status(500).json({ error: 'Error al cambiar la contraseña' });
   }
 }
 
@@ -324,4 +397,4 @@ async function getMyBusiness(req, res) {
   }
 }
 
-module.exports = { register, login, changePassword, setupBusiness, getMyBusiness };
+module.exports = { register, login, forgotPassword, resetPassword, changePassword, setupBusiness, getMyBusiness };

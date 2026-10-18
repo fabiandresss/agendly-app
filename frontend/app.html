@@ -103,6 +103,14 @@
     .tb-confirm  { background: var(--color-info-light);    color: var(--color-info); }
     .tb-complete { background: var(--color-success-light); color: var(--color-success); }
     .tb-cancel   { background: var(--color-error-light);   color: var(--color-error); }
+    .tb-resched  { background: var(--brand-primary-light); color: var(--brand-primary); }
+
+    /* Reagendar: selector de horarios */
+    .rslots { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; margin-top: 8px; }
+    .rslot { padding: 8px 4px; border-radius: var(--radius-md); border: 1.5px solid var(--border-default); background: var(--surface-card); font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font-body); color: var(--text-primary); transition: all var(--transition-fast); }
+    .rslot:hover { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-primary-light); }
+    .rslot.active { background: var(--brand-primary); border-color: var(--brand-primary); color: #fff; }
+    .rinfo { background: var(--surface-subtle); border: 1px solid var(--border-default); border-radius: var(--radius-md); padding: 10px 12px; font-size: 13px; margin-bottom: 14px; line-height: 1.5; }
 
     /* FILTERS */
     .fbar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
@@ -442,6 +450,12 @@
         <div class="fgroup"><label class="flabel">Facebook</label><input type="text" id="st-facebook" class="form-input" placeholder="facebook.com/tunegocio"/></div>
       </div>
       <div class="fgroup"><label class="flabel">WhatsApp de contacto</label><input type="tel" id="st-wa" class="form-input" placeholder="+56912345678"/></div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 10px;">Cancelaciones</div>
+      <div class="fgroup">
+        <label class="flabel">Anticipación mínima para que el cliente cancele o reagende (horas)</label>
+        <input type="number" id="st-minhours" class="form-input" min="0" max="168" step="1" style="max-width:140px;"/>
+        <span style="font-size:11px;color:var(--text-muted);">Con 2, el cliente no podrá cancelar ni reagendar con su link si faltan menos de 2 horas. 0 = sin restricción. Tú siempre puedes hacerlo desde el panel.</span>
+      </div>
       <div class="fgroup">
         <label class="flabel">URL de reservas</label>
         <input type="text" id="st-slug" class="form-input" disabled style="opacity:.6;"/>
@@ -548,6 +562,23 @@
     <div class="mfooter">
       <button class="btn btn-secondary" onclick="closeM('block')">Cancelar</button>
       <button class="btn btn-primary" onclick="saveBlk()">Crear bloqueo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL REAGENDAR RESERVA -->
+<div class="moverlay" id="m-resched">
+  <div class="mbox" style="max-width:420px;">
+    <div class="mheader"><span class="mtitle">Reagendar reserva</span><button class="mclose" onclick="closeM('resched')">×</button></div>
+    <div class="mbody">
+      <div class="rinfo" id="resched-info"></div>
+      <div class="fgroup"><label class="flabel">Nueva fecha</label><input type="date" id="resched-date" class="form-input" onchange="loadReschedSlots()"/></div>
+      <div id="resched-slots"></div>
+      <div class="alert alert-error" id="resched-err" style="margin-top:12px;"><span id="resched-err-txt"></span></div>
+    </div>
+    <div class="mfooter">
+      <button class="btn btn-secondary" onclick="closeM('resched')">Cancelar</button>
+      <button class="btn btn-primary" id="resched-btn" onclick="confirmResched()" disabled>Confirmar nuevo horario</button>
     </div>
   </div>
 </div>
@@ -870,6 +901,7 @@ function renderAppts(appts) {
       <td>${sbadge(a.status)}</td>
       <td><div class="tactions">
         <button class="tbtn tb-confirm"  onclick="chStatus('${a.id}','confirmed')"  ${!cc?'disabled':''}>Confirmar</button>
+        <button class="tbtn tb-resched"  onclick="openResched('${a.id}')"            ${!ca?'disabled':''}>Reagendar</button>
         <button class="tbtn tb-complete" onclick="chStatus('${a.id}','completed')"  ${!ck?'disabled':''}>Completar</button>
         <button class="tbtn tb-cancel"   onclick="chStatus('${a.id}','cancelled')"  ${!ca?'disabled':''}>Cancelar</button>
       </div></td>
@@ -879,12 +911,73 @@ function renderAppts(appts) {
 
 async function chStatus(id, ns) {
   const i = S.appts.findIndex(a=>a.id===id); if (i<0) return;
+  if (ns === 'cancelled' && !confirm(`¿Cancelar la reserva de ${S.appts[i].client_name}?\nSe le avisará al cliente.`)) return;
   const prev = S.appts[i].status;
   S.appts[i].status = ns; applyApptF();
   try {
     await api(`/api/appointments/${id}/status`,{ method:'PATCH', body:JSON.stringify({status:ns,businessSlug:SLUG}) });
-    toast(`Reserva marcada como ${SL[ns].toLowerCase()}`, 'success');
+    const notified = (ns==='confirmed' || ns==='cancelled') ? ' · se avisó al cliente' : '';
+    toast(`Reserva marcada como ${SL[ns].toLowerCase()}${notified}`, 'success');
   } catch(e) { S.appts[i].status=prev; applyApptF(); toast(e.message,'error'); }
+}
+
+// ── Reagendar desde el panel ──
+let reschedApt = null, reschedTime = null;
+
+function openResched(id) {
+  const a = S.appts.find(x=>x.id===id); if (!a) return;
+  reschedApt = a; reschedTime = null;
+  document.getElementById('resched-info').innerHTML =
+    `<b>${esc(a.client_name)}</b> · ${esc(a.services?.name??'—')} · ${esc(a.professionals?.name??'—')}<br>Actual: ${$DATE(a.scheduled_at)}`;
+  const dateEl = document.getElementById('resched-date');
+  dateEl.min   = todayLocal();
+  dateEl.value = new Date(a.scheduled_at).toLocaleDateString('en-CA', { timeZone: AGENDLY_TZ });
+  document.getElementById('resched-err').classList.remove('visible');
+  document.getElementById('resched-btn').disabled = true;
+  openM('resched');
+  loadReschedSlots();
+}
+
+async function loadReschedSlots() {
+  const a = reschedApt, date = document.getElementById('resched-date').value;
+  const box = document.getElementById('resched-slots');
+  reschedTime = null; document.getElementById('resched-btn').disabled = true;
+  if (!a || !date) { box.innerHTML = ''; return; }
+
+  box.innerHTML = '<div style="font-size:13px;color:var(--text-muted);margin-top:8px;">Buscando horarios...</div>';
+  try {
+    const q = new URLSearchParams({ businessSlug: SLUG, professionalId: a.professional_id, serviceId: a.service_id, date, excludeId: a.id });
+    const r = await fetch(`${API}/api/availability?${q}`);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error ?? 'No se pudo consultar la disponibilidad');
+    if (!j.available || !j.slots?.length) {
+      box.innerHTML = `<div style="font-size:13px;color:var(--text-muted);margin-top:8px;">${esc(j.reason ?? 'No hay horarios disponibles este día.')}</div>`;
+      return;
+    }
+    box.innerHTML = '<div class="rslots">' + j.slots.map(t => `<button type="button" class="rslot" data-t="${esc(t)}">${esc(t)}</button>`).join('') + '</div>';
+    box.querySelectorAll('.rslot').forEach(btn => btn.addEventListener('click', () => {
+      box.querySelectorAll('.rslot').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active'); reschedTime = btn.dataset.t;
+      document.getElementById('resched-btn').disabled = false;
+    }));
+  } catch(e) {
+    box.innerHTML = `<div style="font-size:13px;color:var(--color-error);margin-top:8px;">${esc(e.message)}</div>`;
+  }
+}
+
+async function confirmResched() {
+  const a = reschedApt, date = document.getElementById('resched-date').value;
+  if (!a || !date || !reschedTime) return;
+  const btn = document.getElementById('resched-btn'), eEl = document.getElementById('resched-err'), eTx = document.getElementById('resched-err-txt');
+  eEl.classList.remove('visible'); btn.disabled = true; btn.textContent = 'Reagendando...';
+  try {
+    const r = await api(`/api/appointments/${a.id}/reschedule`, { method:'POST', body:JSON.stringify({ businessSlug:SLUG, scheduledAt:`${date}T${reschedTime}` }) });
+    a.scheduled_at = r.scheduled_at; a.ends_at = r.ends_at; a.status = r.status;
+    S.appts.sort((x,y)=>x.scheduled_at.localeCompare(y.scheduled_at));
+    closeM('resched'); applyApptF();
+    toast('Reserva reagendada · se avisó al cliente', 'success');
+  } catch(e) { eTx.textContent = e.message; eEl.classList.add('visible'); }
+  finally { btn.textContent = 'Confirmar nuevo horario'; btn.disabled = !reschedTime; }
 }
 
 // ════════════════════════════════════
@@ -1260,6 +1353,7 @@ function loadSettings() {
     document.getElementById('st-instagram').value= S.biz.instagram    ?? '';
     document.getElementById('st-facebook').value = S.biz.facebook     ?? '';
     document.getElementById('st-wa').value       = S.biz.whatsapp_contact ?? '';
+    document.getElementById('st-minhours').value = S.biz.cancellation_min_hours ?? 2;
     document.getElementById('st-slug').value     = S.biz.slug         ?? '';
     document.getElementById('profile-link').href = `profile.html?negocio=${S.biz.slug}`;
   }
@@ -1273,6 +1367,8 @@ function showSt(panel, btn) {
 async function saveBiz() {
   const name = document.getElementById('st-bizname').value.trim();
   if (!name) { toast('El nombre es requerido', 'error'); return; }
+  const minHours = Number(document.getElementById('st-minhours').value);
+  if (!Number.isInteger(minHours) || minHours < 0 || minHours > 168) { toast('La anticipación debe ser un número entero entre 0 y 168 horas', 'error'); return; }
   try {
     const updated = await api(`/api/admin/${SLUG}/business`, {
       method: 'PATCH',
@@ -1285,6 +1381,7 @@ async function saveBiz() {
         instagram:         document.getElementById('st-instagram').value.trim() || null,
         facebook:          document.getElementById('st-facebook').value.trim()  || null,
         whatsapp_contact:  document.getElementById('st-wa').value.trim()        || null,
+        cancellation_min_hours: minHours,
       }),
     });
     if (S.biz) { Object.assign(S.biz, updated); document.getElementById('sb-biz').textContent = name; }

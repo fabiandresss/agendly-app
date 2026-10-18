@@ -196,6 +196,8 @@ async function getAppointmentsByBusiness(businessId) {
       ends_at,
       status,
       notes,
+      service_id,
+      professional_id,
       services      ( name, duration_min, price ),
       professionals ( name )
     `)
@@ -206,9 +208,19 @@ async function getAppointmentsByBusiness(businessId) {
   return data;
 }
 
+// Reserva con todo lo necesario para validar y para avisar al cliente
+const APPT_SELECT = `
+  id, status, scheduled_at, ends_at, professional_id, service_id, cancel_token,
+  client_name, client_phone, client_email,
+  businesses(id, name, slug, phone, cancellation_min_hours),
+  services(id, name, duration_min),
+  professionals(name)
+`;
+
 /**
- * Actualiza el estado de una reserva.
- * Valida que el nuevo estado sea uno de los valores permitidos.
+ * Actualiza el estado de una reserva del negocio.
+ * Retorna { appointment, previousStatus } — appointment incluye los datos
+ * relacionados (negocio, servicio, profesional) para poder notificar al cliente.
  */
 async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
   const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
@@ -216,24 +228,31 @@ async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
     throw httpError(`Estado inválido: ${newStatus}`, 400);
   }
 
-  const { data, error } = await supabase
+  const { data: current, error: findErr } = await supabase
+    .from('appointments')
+    .select(APPT_SELECT)
+    .eq('id', appointmentId)
+    .eq('business_id', businessId)   // seguridad: solo toca reservas de este negocio
+    .maybeSingle();
+
+  // 22P02 = UUID mal formado en la URL
+  if (findErr && findErr.code !== '22P02') throw findErr;
+  if (!current) throw httpError('Reserva no encontrada', 404);
+
+  const previousStatus = current.status;
+  if (previousStatus === newStatus) return { appointment: current, previousStatus };
+
+  const { error } = await supabase
     .from('appointments')
     .update({ status: newStatus })
     .eq('id', appointmentId)
-    .eq('business_id', businessId)   // seguridad: solo toca reservas de este negocio
-    .select()
-    .single();
+    .eq('business_id', businessId);
 
   // Reactivar una reserva cancelada puede chocar con otra ya tomada en ese horario
   throwIfOverlap(error);
-  if (error) {
-    if (error.code === 'PGRST116') throw httpError('Reserva no encontrada', 404);
-    // UUID mal formado en la URL
-    if (error.code === '22P02')    throw httpError('Id de reserva inválido', 400);
-    throw error;
-  }
+  if (error) throw error;
 
-  return data;
+  return { appointment: { ...current, status: newStatus }, previousStatus };
 }
 
 // ─────────────────────────────────────────────────────────
@@ -248,10 +267,10 @@ async function updateAppointmentStatus(appointmentId, businessId, newStatus) {
  * @param {string} professionalId
  * @param {string} dateStr - "YYYY-MM-DD" (día del negocio)
  */
-async function getBookedSlotsForDay(professionalId, dateStr) {
+async function getBookedSlotsForDay(professionalId, dateStr, excludeId = null) {
   const { start, end } = dayRange(dateStr);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('appointments')
     .select('scheduled_at, ends_at')
     .eq('professional_id', professionalId)
@@ -259,6 +278,9 @@ async function getBookedSlotsForDay(professionalId, dateStr) {
     .lt('scheduled_at', end.toISOString())
     .gt('ends_at', start.toISOString());
 
+  if (excludeId) query = query.neq('id', excludeId);
+
+  const { data, error } = await query;
   if (error) throw error;
 
   return data.map(appt => ({
@@ -321,8 +343,9 @@ function hasConflictWithBookings(candidate, bookedSlots) {
  * @param {string} params.serviceId        - UUID del servicio
  * @param {string} params.date             - Fecha en formato "YYYY-MM-DD"
  * @param {number} [params.intervalMin]    - Intervalo entre slots (15 o 30)
+ * @param {string} [params.excludeId]      - Reserva a ignorar (la que se está reagendando)
  */
-async function getAvailableSlots({ businessId, professionalId, serviceId, date, intervalMin }) {
+async function getAvailableSlots({ businessId, professionalId, serviceId, date, intervalMin, excludeId = null }) {
   const { data: service, error: svcErr } = await supabase
     .from('services')
     .select('duration_min, name')
@@ -362,7 +385,7 @@ async function getAvailableSlots({ businessId, professionalId, serviceId, date, 
     return { ...base, interval_min: interval, available: false, reason: 'La duración del servicio no cabe en el horario disponible', slots: [] };
   }
 
-  const bookedSlots = await getBookedSlotsForDay(professionalId, date);
+  const bookedSlots = await getBookedSlotsForDay(professionalId, date, excludeId);
   const now = new Date();
 
   // Sin horas pasadas (hoy), sin choques con reservas y sin duplicados entre tramos
@@ -382,76 +405,95 @@ async function getAvailableSlots({ businessId, professionalId, serviceId, date, 
 }
 
 // ─────────────────────────────────────────────────────────
-//  CANCELAR / REAGENDAR POR TOKEN
+//  CANCELAR / REAGENDAR
 // ─────────────────────────────────────────────────────────
 
-async function cancelByToken(token) {
-  const { data: appt, error: findErr } = await supabase
+/** Busca una reserva por su token (el que recibe el cliente en sus links). */
+async function findByToken(token) {
+  const { data, error } = await supabase
     .from('appointments')
-    .select(`
-      id, status, scheduled_at, client_name, client_phone,
-      businesses(name, phone),
-      services(name),
-      professionals(name)
-    `)
+    .select(APPT_SELECT)
     .eq('cancel_token', token)
-    .single();
+    .maybeSingle();
 
-  if (findErr || !appt) {
-    throw httpError('Reserva no encontrada o token inválido', 404);
-  }
-  if (appt.status === 'cancelled') {
-    throw httpError('Esta reserva ya fue cancelada', 409);
-  }
-  if (appt.status === 'completed') {
-    throw httpError('No se puede cancelar una reserva completada', 409);
-  }
-  if (new Date(appt.scheduled_at) < new Date()) {
-    throw httpError('No se puede cancelar una reserva pasada', 409);
-  }
-
-  const { data, error: updateErr } = await supabase
-    .from('appointments')
-    .update({ status: 'cancelled' })
-    .eq('cancel_token', token)
-    .select()
-    .single();
-
-  if (updateErr) throw updateErr;
-
-  // Con los datos relacionados para poder notificar al dueño
-  return { ...data, businesses: appt.businesses, services: appt.services, professionals: appt.professionals };
+  // 22P02 = token con formato inválido
+  if (error && error.code !== '22P02') throw error;
+  if (!data) throw httpError('Reserva no encontrada o token inválido', 404);
+  return data;
 }
 
 /**
- * Reagenda una reserva usando el cancel_token.
- * @param {Date} scheduled - nueva fecha/hora (ya parseada y válida)
+ * Política de anticipación mínima del negocio para cambios hechos por el cliente.
+ * @returns {{ min_hours: number, deadline: string|null, can_modify: boolean }}
  */
-async function rescheduleByToken(token, scheduled) {
-  const { data: appt, error: findErr } = await supabase
-    .from('appointments')
-    .select(`
-      id, status, scheduled_at, professional_id, service_id, cancel_token,
-      client_name, client_phone, client_email,
-      businesses(id, name, phone),
-      services(id, name, duration_min),
-      professionals(name)
-    `)
-    .eq('cancel_token', token)
-    .single();
+function modificationPolicy(appt) {
+  const minHours = appt.businesses?.cancellation_min_hours ?? 0;
+  const deadline = new Date(new Date(appt.scheduled_at).getTime() - minHours * 3600 * 1000);
+  return {
+    min_hours:  minHours,
+    deadline:   minHours > 0 ? deadline.toISOString() : null,
+    can_modify: new Date() <= deadline && new Date(appt.scheduled_at) > new Date(),
+  };
+}
 
-  if (findErr || !appt) {
-    throw httpError('Reserva no encontrada o token inválido', 404);
+/** Lanza 409 si el cliente ya no está a tiempo de cancelar/reagendar online. */
+function assertClientCanModify(appt, verb) {
+  if (new Date(appt.scheduled_at) < new Date()) {
+    throw httpError(`No se puede ${verb} una reserva pasada`, 409);
   }
-  if (appt.status === 'cancelled') {
-    throw httpError('Esta reserva fue cancelada y no puede reagendarse', 409);
+  const { min_hours, can_modify } = modificationPolicy(appt);
+  if (!can_modify) {
+    const phone = appt.businesses?.phone;
+    throw httpError(
+      `Ya no puedes ${verb} esta reserva por internet: el negocio lo permite hasta ${min_hours} ` +
+      `${min_hours === 1 ? 'hora' : 'horas'} antes de la cita.` +
+      (phone ? ` Contáctalos al ${phone}.` : ' Contacta directamente al negocio.'),
+      409
+    );
   }
-  if (appt.status === 'completed') {
-    throw httpError('No se puede reagendar una reserva completada', 409);
-  }
-  if (scheduled < new Date()) {
-    throw httpError('No puedes reagendar en una fecha pasada', 400);
-  }
+}
+
+/** Datos de una reserva para las páginas de cancelar/reagendar, con su política. */
+async function getByToken(token) {
+  const appt = await findByToken(token);
+  if (appt.status === 'cancelled') throw httpError('Esta reserva ya fue cancelada', 409);
+  if (appt.status === 'completed') throw httpError('Esta reserva ya fue completada', 409);
+
+  return {
+    id:            appt.id,
+    client_name:   appt.client_name,
+    scheduled_at:  appt.scheduled_at,
+    status:        appt.status,
+    businesses:    { name: appt.businesses.name, slug: appt.businesses.slug, phone: appt.businesses.phone },
+    services:      appt.services,
+    professionals: { id: appt.professional_id, name: appt.professionals.name },
+    policy:        modificationPolicy(appt),
+  };
+}
+
+/** El cliente cancela con su link. Respeta la anticipación mínima del negocio. */
+async function cancelByToken(token) {
+  const appt = await findByToken(token);
+
+  if (appt.status === 'cancelled') throw httpError('Esta reserva ya fue cancelada', 409);
+  if (appt.status === 'completed') throw httpError('No se puede cancelar una reserva completada', 409);
+  assertClientCanModify(appt, 'cancelar');
+
+  const { error } = await supabase
+    .from('appointments')
+    .update({ status: 'cancelled' })
+    .eq('id', appt.id);
+
+  if (error) throw error;
+  return { ...appt, status: 'cancelled' };
+}
+
+/**
+ * Mueve una reserva a otra hora (núcleo común del reagendar del cliente y del dueño).
+ * Aplica las mismas reglas que una reserva nueva y resetea el recordatorio.
+ */
+async function moveAppointment(appt, scheduled, newStatus) {
+  if (scheduled < new Date()) throw httpError('No puedes reagendar en una fecha pasada', 400);
 
   const duration = appt.services.duration_min;
   const endsAt   = new Date(scheduled.getTime() + duration * 60 * 1000);
@@ -467,31 +509,55 @@ async function rescheduleByToken(token, scheduled) {
     excludeId:      appt.id,
   });
 
-  const { data, error: updateErr } = await supabase
+  const { error } = await supabase
     .from('appointments')
     .update({
       scheduled_at:  scheduled.toISOString(),
       ends_at:       endsAt.toISOString(),
-      status:        'pending',
+      status:        newStatus,
       reminder_sent: false, // la nueva fecha necesita su propio recordatorio
     })
-    .eq('cancel_token', token)
-    .select()
-    .single();
+    .eq('id', appt.id);
 
-  throwIfOverlap(updateErr);
-  if (updateErr) throw updateErr;
+  throwIfOverlap(error);
+  if (error) throw error;
 
-  // Retornar con datos completos para la notificación
-  return {
-    ...data,
-    businesses:    appt.businesses,
-    services:      appt.services,
-    professionals: appt.professionals,
-    client_name:   appt.client_name,
-    client_phone:  appt.client_phone,
-    client_email:  appt.client_email,
-  };
+  return { ...appt, scheduled_at: scheduled.toISOString(), ends_at: endsAt.toISOString(), status: newStatus };
+}
+
+/**
+ * El cliente reagenda con su link. Respeta la anticipación mínima y deja la
+ * reserva en "pending" (el negocio debe volver a confirmarla).
+ * @param {Date} scheduled - nueva fecha/hora (ya parseada y válida)
+ */
+async function rescheduleByToken(token, scheduled) {
+  const appt = await findByToken(token);
+
+  if (appt.status === 'cancelled') throw httpError('Esta reserva fue cancelada y no puede reagendarse', 409);
+  if (appt.status === 'completed') throw httpError('No se puede reagendar una reserva completada', 409);
+  assertClientCanModify(appt, 'reagendar');
+
+  return moveAppointment(appt, scheduled, 'pending');
+}
+
+/**
+ * El dueño reagenda desde el panel. Sin anticipación mínima y conserva el estado.
+ * @param {Date} scheduled - nueva fecha/hora (ya parseada y válida)
+ */
+async function rescheduleByOwner(appointmentId, businessId, scheduled) {
+  const { data: appt, error } = await supabase
+    .from('appointments')
+    .select(APPT_SELECT)
+    .eq('id', appointmentId)
+    .eq('business_id', businessId)
+    .maybeSingle();
+
+  if (error && error.code !== '22P02') throw error;
+  if (!appt) throw httpError('Reserva no encontrada', 404);
+  if (appt.status === 'cancelled') throw httpError('Una reserva cancelada no puede reagendarse', 409);
+  if (appt.status === 'completed') throw httpError('Una reserva completada no puede reagendarse', 409);
+
+  return moveAppointment(appt, scheduled, appt.status);
 }
 
 module.exports = {
@@ -502,6 +568,8 @@ module.exports = {
   getAppointmentsByBusiness,
   updateAppointmentStatus,
   getAvailableSlots,
+  getByToken,
   cancelByToken,
   rescheduleByToken,
+  rescheduleByOwner,
 };

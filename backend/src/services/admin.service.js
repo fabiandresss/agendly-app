@@ -246,12 +246,17 @@ async function replaceSchedules(businessId, professionalId, schedules) {
 // ─── NEGOCIO ─────────────────────────────────────────────────────
 
 async function updateBusiness(businessId, fields) {
-  const allowed = ['name', 'phone', 'address', 'description', 'photo_url', 'instagram', 'facebook', 'whatsapp_contact'];
+  const allowed = ['name', 'phone', 'address', 'description', 'photo_url', 'instagram', 'facebook', 'whatsapp_contact', 'cancellation_min_hours'];
   const updates = Object.fromEntries(
     Object.entries(fields ?? {}).filter(([k]) => allowed.includes(k))
   );
   if (Object.keys(updates).length === 0) throw badRequest('No hay campos válidos para actualizar');
   if (updates.name !== undefined && !String(updates.name).trim()) throw badRequest('El nombre es requerido');
+  if (updates.cancellation_min_hours !== undefined) {
+    const h = Number(updates.cancellation_min_hours);
+    if (!Number.isInteger(h) || h < 0 || h > 168) throw badRequest('La anticipación debe ser un entero entre 0 y 168 horas');
+    updates.cancellation_min_hours = h;
+  }
 
   const { data, error } = await supabase
     .from('businesses')

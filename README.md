@@ -22,9 +22,12 @@ cp .env.example .env     # completa los valores
 npm start                # o: node index.js
 ```
 
-**Base de datos:** en Supabase → SQL Editor ejecuta una sola vez
-[`backend/db/anti-doble-reserva.sql`](backend/db/anti-doble-reserva.sql). Crea una restricción que impide que
-un profesional tenga dos reservas activas que se solapen, incluso si dos clientes reservan a la vez.
+**Base de datos:** en Supabase → SQL Editor ejecuta una sola vez cada script de [`backend/db/`](backend/db):
+
+- [`anti-doble-reserva.sql`](backend/db/anti-doble-reserva.sql): impide que un profesional tenga dos reservas
+  activas que se solapen, incluso si dos clientes reservan a la vez.
+- [`cancelacion-anticipacion.sql`](backend/db/cancelacion-anticipacion.sql): agrega la anticipación mínima
+  (en horas) para cancelar/reagendar, configurable por negocio.
 
 Variables en [`backend/.env.example`](backend/.env.example). Las imprescindibles son las de Supabase;
 sin Twilio/Resend la app funciona, solo que no envía notificaciones.
@@ -43,6 +46,7 @@ de VS Code, puerto 5500).
 | Página | Para quién | Qué hace |
 |---|---|---|
 | `register.html`, `login.html` | Dueño | Crear cuenta / iniciar sesión |
+| `forgot-password.html`, `reset-password.html` | Dueño | Recuperar contraseña con un enlace enviado por correo |
 | `onboarding.html` | Dueño | Crea el negocio, servicios y profesionales (con horario lun–vie 9–18 por defecto) |
 | `app.html?negocio=slug` | Dueño | Panel: dashboard, reservas, servicios, profesionales, horarios, bloqueos, clientes, configuración |
 | `profile.html?negocio=slug` | Público | Perfil del negocio |
@@ -57,6 +61,12 @@ de VS Code, puerto 5500).
 - Un profesional puede tener varios tramos por día. La reserva debe caber completa en un tramo.
 - Los **bloqueos** (feriados, vacaciones) cierran la agenda del negocio o de un profesional.
 - Un profesional sin servicios asignados ofrece todos.
+- **Cancelar / reagendar:** el cliente puede hacerlo con su link hasta N horas antes (por defecto 2; se cambia en
+  Configuración → Mi negocio → Cancelaciones; 0 = sin restricción). Si ya no está a tiempo, la página le muestra el
+  teléfono del negocio. El dueño siempre puede cancelar y reagendar desde el panel, sin esa restricción.
+- **Avisos al cliente:** recibe WhatsApp (y correo si lo dejó) cuando el dueño confirma, cancela o reagenda su reserva.
+- **Recuperar contraseña:** el enlace del correo es de un solo uso y vence en 1 hora. Los correos salen por Resend:
+  en producción define `EMAIL_FROM` con un dominio verificado, o solo llegarán al dueño de la cuenta de Resend.
 - Doble reserva imposible: la base de datos rechaza una reserva que se solape con otra activa del mismo profesional.
 - Un recordatorio por WhatsApp sale ~24 h antes de cada reserva pendiente o confirmada.
 

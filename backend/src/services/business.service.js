@@ -12,7 +12,7 @@ const supabaseAdmin = require('../config/supabaseAdmin');
 async function getBusinessBySlug(slug) {
   // Perfil completo (lo usan profile.html y la configuración del panel) y,
   // si la base aún no tiene las columnas opcionales, solo los campos básicos.
-  const FULL  = 'id, name, slug, business_type, phone, email, address, plan, description, photo_url, instagram, facebook, whatsapp_contact';
+  const FULL  = 'id, name, slug, business_type, phone, email, address, plan, description, photo_url, instagram, facebook, whatsapp_contact, cancellation_min_hours';
   const BASIC = 'id, name, slug, phone, email, address, plan';
 
   const query = cols => supabase

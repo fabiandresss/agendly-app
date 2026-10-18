@@ -176,8 +176,18 @@ async function updateStatus(req, res) {
     }
 
     const business = await authService.verifyBusinessOwnership(businessSlug, req.user.id);
-    const updated  = await appointmentService.updateAppointmentStatus(id, business.id, status);
-    res.json({ message: 'Estado actualizado', data: updated });
+    const { appointment, previousStatus } = await appointmentService.updateAppointmentStatus(id, business.id, status);
+    res.json({ message: 'Estado actualizado', data: { id: appointment.id, status: appointment.status } });
+
+    // Avisar al cliente (fire and forget) solo si el estado realmente cambió
+    if (status !== previousStatus) {
+      const notify =
+        status === 'confirmed' ? notificationService.notifyClientConfirmed :
+        status === 'cancelled' ? notificationService.notifyClientCancelledByBusiness : null;
+      if (notify) {
+        notify(appointment).catch(err => console.error('[controller] aviso al cliente:', err.message));
+      }
+    }
 
   } catch (err) {
     const code = err.statusCode || 500;
@@ -214,25 +224,11 @@ async function getByToken(req, res) {
     const { token } = req.query;
     if (!token) return res.status(400).json({ error: 'Token requerido' });
 
-    const { data, error } = await supabase
-      .from('appointments')
-      .select(`
-        id, client_name, scheduled_at, status,
-        businesses(name, slug),
-        services(id, name, duration_min),
-        professionals(id, name)
-      `)
-      .eq('cancel_token', token)
-      .single();
-
-    if (error || !data) return res.status(404).json({ error: 'Reserva no encontrada' });
-    if (data.status === 'cancelled') return res.status(409).json({ error: 'Esta reserva ya fue cancelada' });
-    if (data.status === 'completed') return res.status(409).json({ error: 'Esta reserva ya fue completada' });
-
-    res.json({ data });
+    res.json({ data: await appointmentService.getByToken(token) });
   } catch (err) {
-    console.error('[appointment.controller] getByToken:', err.message);
-    res.status(500).json({ error: 'Error al obtener la reserva' });
+    const code = err.statusCode || 500;
+    if (code === 500) console.error('[appointment.controller] getByToken:', err.message);
+    res.status(code).json({ error: code === 500 ? 'Error al obtener la reserva' : err.message });
   }
 }
 
@@ -266,4 +262,38 @@ async function rescheduleByToken(req, res) {
   }
 }
 
-module.exports = { createAppointment, getAppointments, updateStatus, cancelByToken, getByToken, rescheduleByToken };
+/**
+ * POST /api/appointments/:id/reschedule  (dueño, requiere sesión)
+ * Body: { businessSlug, scheduledAt }
+ */
+async function rescheduleByOwner(req, res) {
+  try {
+    const { id } = req.params;
+    const { businessSlug, scheduledAt } = req.body;
+
+    if (!businessSlug) return res.status(400).json({ error: 'businessSlug es requerido' });
+    if (!scheduledAt)  return res.status(400).json({ error: 'scheduledAt es requerido' });
+
+    const scheduled = parseScheduledAt(scheduledAt);
+    if (!scheduled) return res.status(400).json({ error: 'El formato de scheduledAt no es válido' });
+
+    const business = await authService.verifyBusinessOwnership(businessSlug, req.user.id);
+    const data     = await appointmentService.rescheduleByOwner(id, business.id, scheduled);
+
+    res.json({
+      message: 'Reserva reagendada correctamente',
+      data: { id: data.id, scheduled_at: data.scheduled_at, ends_at: data.ends_at, status: data.status },
+    });
+
+    notificationService
+      .notifyClientRescheduled(data, true)
+      .catch(err => console.error('[controller] notifyClientRescheduled:', err.message));
+
+  } catch (err) {
+    const code = err.statusCode || 500;
+    console.error('[appointment.controller] rescheduleByOwner:', err.message);
+    res.status(code).json({ error: code === 500 ? 'Error al reagendar la reserva' : err.message });
+  }
+}
+
+module.exports = { createAppointment, getAppointments, updateStatus, cancelByToken, getByToken, rescheduleByToken, rescheduleByOwner };

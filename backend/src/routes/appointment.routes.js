@@ -10,5 +10,6 @@ router.post('/cancel',       cancelLimiter, ctrl.cancelByToken);
 router.post('/reschedule',   cancelLimiter, ctrl.rescheduleByToken);
 router.post('/',             bookingLimiter, ctrl.createAppointment);
 router.patch('/:id/status',  auth, ctrl.updateStatus);
+router.post('/:id/reschedule', auth, ctrl.rescheduleByOwner);
 
 module.exports = router;

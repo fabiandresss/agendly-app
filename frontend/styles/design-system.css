@@ -75,7 +75,7 @@ body {
   transition: all var(--transition-base);
   text-decoration: none; white-space: nowrap; user-select: none;
 }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+.btn:disabled, .btn.disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
 .btn-primary  { background: var(--brand-primary); color: white; border-color: var(--brand-primary); }
 .btn-primary:hover { background: var(--brand-primary-hover); border-color: var(--brand-primary-hover); }
 .btn-secondary { background: var(--surface-card); color: var(--text-primary); border-color: var(--border-default); }

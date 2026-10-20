@@ -62,6 +62,8 @@ python .claude/dev_server.py 5500 frontend
 | `profile.html?negocio=slug` | Público | Perfil del negocio |
 | `index.html?negocio=slug` | Cliente | Reservar hora: encabezado del negocio (foto, tipo, descripción, contacto y redes), flujo de 4 pasos y resumen lateral con duración, total y política de cancelación |
 | `terminos.html`, `privacidad.html` | Todos | Términos de servicio y política de privacidad (Chile). El correo de contacto está en `contacto@agendly.cl`: cámbialo por el real antes de publicar |
+
+**Clientes:** no hay tabla aparte; se derivan de las reservas con `frontend/clients.js`. Dos reservas son del mismo cliente si comparten teléfono (últimos 9 dígitos) o correo **y** sus nombres son compatibles ("David" ~ "David Astorga", tildes, mayúsculas, erratas de una letra). Compartir solo el teléfono no basta, y dos nombres iguales con teléfonos distintos son personas distintas.
 | `cancel.html?token=…`, `reschedule.html?token=…` | Cliente | Cancelar / reagendar con el link recibido |
 
 

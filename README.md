@@ -9,7 +9,7 @@ y reciben confirmación y recordatorio por WhatsApp (Twilio) y correo (Resend).
 ```
 backend/      API REST (Node.js + Express 5 + Supabase)
 frontend/     Páginas HTML estáticas de la aplicación (sin build)
-agendly-web/  Página de presentación (landing). Los botones apuntan a la app: en producción
+agendly-web/  Página de presentación (landing; estilos en frontend/styles.css). Los botones apuntan a la app: en producción
               define AGENDLY_PROD_APP en agendly-web/config.js
 ```
 

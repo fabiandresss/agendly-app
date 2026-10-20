@@ -71,6 +71,16 @@ const updateBusiness = handle(async (req, res) => {
   res.json({ data: await adminService.updateBusiness(biz.id, req.body) });
 }, 'Error al actualizar el negocio');
 
+const uploadPhoto = handle(async (req, res) => {
+  const biz = await owned(req);
+  res.json({ data: await adminService.uploadBusinessPhoto(biz, req.body) });
+}, 'Error al subir la foto');
+
+const deletePhoto = handle(async (req, res) => {
+  const biz = await owned(req);
+  res.json({ data: await adminService.deleteBusinessPhoto(biz) });
+}, 'Error al eliminar la foto');
+
 const listBlocks = handle(async (req, res) => {
   const biz = await owned(req);
   res.json({ data: await adminService.listBlocks(biz.id) });
@@ -109,7 +119,7 @@ module.exports = {
   listServices, createService, updateService,
   listProfessionals, createProfessional, updateProfessional,
   getSchedules, replaceSchedules,
-  updateBusiness,
+  updateBusiness, uploadPhoto, deletePhoto,
   listBlocks, createBlock, deleteBlock,
   getProfessionalServices, setProfessionalServices,
 };

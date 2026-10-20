@@ -61,6 +61,7 @@ python .claude/dev_server.py 5500 frontend
 | `app.html?negocio=slug` | Dueño | Panel: dashboard, reservas, **calendario** (día, semana, mes y año), servicios, profesionales, horarios, bloqueos, clientes, configuración |
 | `profile.html?negocio=slug` | Público | Perfil del negocio |
 | `index.html?negocio=slug` | Cliente | Reservar hora: encabezado del negocio (foto, tipo, descripción, contacto y redes), flujo de 4 pasos y resumen lateral con duración, total y política de cancelación |
+| `terminos.html`, `privacidad.html` | Todos | Términos de servicio y política de privacidad (Chile). El correo de contacto está en `contacto@agendly.cl`: cámbialo por el real antes de publicar |
 | `cancel.html?token=…`, `reschedule.html?token=…` | Cliente | Cancelar / reagendar con el link recibido |
 
 

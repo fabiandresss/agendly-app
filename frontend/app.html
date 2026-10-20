@@ -332,6 +332,11 @@
     .stpanel.active { display: block; animation: fadeIn 0.15s ease both; }
     .stgroup-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border-default); }
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .photo-up { display: flex; align-items: center; gap: 14px; }
+    .photo-prev { width: 64px; height: 64px; border-radius: 16px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--brand-primary-light); color: var(--brand-primary); font-family: var(--font-display); font-size: 20px; font-weight: 700; border: 1px solid var(--border-default); }
+    .photo-prev img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .photo-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
     .fgroup { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
     .flabel { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 
@@ -762,7 +767,20 @@
         <div class="fgroup"><label class="flabel">Teléfono</label><input type="tel" id="st-phone" class="form-input"/></div>
         <div class="fgroup"><label class="flabel">Dirección</label><input type="text" id="st-address" class="form-input"/></div>
       </div>
-      <div class="fgroup"><label class="flabel">URL de foto (enlace directo a imagen)</label><input type="url" id="st-photo" class="form-input" placeholder="https://ejemplo.com/foto.jpg"/></div>
+      <div class="fgroup">
+        <label class="flabel">Foto o logo del negocio</label>
+        <div class="photo-up">
+          <div class="photo-prev" id="st-photo-prev">?</div>
+          <div class="photo-info">
+            <div class="photo-btns">
+              <button type="button" class="btn btn-secondary btn-sm" id="st-photo-btn" onclick="document.getElementById('st-photo-file').click()"><i class="ti ti-upload"></i>Subir foto</button>
+              <button type="button" class="btn btn-sm btn-danger" id="st-photo-del" onclick="removePhoto()" style="display:none;"><i class="ti ti-trash"></i>Quitar</button>
+            </div>
+            <div class="photo-hint">JPG, PNG o WebP. Se recorta en cuadrado y se ajusta sola.</div>
+          </div>
+          <input type="file" id="st-photo-file" accept="image/jpeg,image/png,image/webp" style="display:none;" onchange="uploadPhoto(this)"/>
+        </div>
+      </div>
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);margin:16px 0 10px;">Redes sociales</div>
       <div class="two-col">
         <div class="fgroup"><label class="flabel">Instagram</label><input type="text" id="st-instagram" class="form-input" placeholder="@tunegocio"/></div>
@@ -2123,6 +2141,57 @@ async function saveProSvcs() {
 // ════════════════════════════════════
 //  CONFIGURACIÓN
 // ════════════════════════════════════
+const PHOTO_OK = /^(https?:\/\/|assets\/)/i;
+function bizInitials(name) { return String(name ?? '?').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?'; }
+
+function renderPhotoPrev() {
+  const url = S.biz?.photo_url, prev = document.getElementById('st-photo-prev');
+  if (url && PHOTO_OK.test(url)) prev.innerHTML = `<img src="${esc(url)}" alt="">`; else prev.textContent = bizInitials(S.biz?.name);
+  document.getElementById('st-photo-del').style.display = url ? '' : 'none';
+  document.getElementById('st-photo-btn').lastChild.textContent = url ? 'Cambiar foto' : 'Subir foto';
+}
+
+// Recorta al centro en cuadrado y reduce a 512px antes de subir (pesa ~50 KB en vez de varios MB).
+function squareJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const side = Math.min(img.width, img.height), size = Math.min(512, side);
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, size, size);
+      g.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => b ? resolve(b) : reject(new Error('No se pudo procesar la imagen')), 'image/jpeg', 0.88);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('El archivo no es una imagen válida')); };
+    img.src = url;
+  });
+}
+
+async function uploadPhoto(input) {
+  const file = input.files?.[0]; input.value = '';
+  if (!file) return;
+  const btn = document.getElementById('st-photo-btn'); btn.classList.add('disabled');
+  try {
+    const blob = await squareJpeg(file);
+    const r = await fetch(`${API}/api/admin/${SLUG}/business/photo`, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg', 'Authorization': 'Bearer ' + TOKEN }, body: blob });
+    if (r.status === 401) { sessionStorage.clear(); location.href = 'login.html'; return; }
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error ?? 'No se pudo subir la foto');
+    Object.assign(S.biz, j.data); renderPhotoPrev(); renderSidebarBiz();
+    toast('Foto actualizada', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+  finally { btn.classList.remove('disabled'); }
+}
+
+async function removePhoto() {
+  try {
+    const d = await api(`/api/admin/${SLUG}/business/photo`, { method: 'DELETE' });
+    Object.assign(S.biz, d); renderPhotoPrev(); renderSidebarBiz();
+    toast('Foto eliminada', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
 function loadSettings() {
   document.getElementById('st-email').value    = EMAIL;
   if (S.biz) {
@@ -2130,7 +2199,7 @@ function loadSettings() {
     document.getElementById('st-desc').value     = S.biz.description  ?? '';
     document.getElementById('st-phone').value    = S.biz.phone        ?? '';
     document.getElementById('st-address').value  = S.biz.address      ?? '';
-    document.getElementById('st-photo').value    = S.biz.photo_url    ?? '';
+    renderPhotoPrev();
     document.getElementById('st-instagram').value= S.biz.instagram    ?? '';
     document.getElementById('st-facebook').value = S.biz.facebook     ?? '';
     document.getElementById('st-wa').value       = S.biz.whatsapp_contact ?? '';
@@ -2158,7 +2227,6 @@ async function saveBiz() {
         description:       document.getElementById('st-desc').value.trim()      || null,
         phone:             document.getElementById('st-phone').value.trim()     || null,
         address:           document.getElementById('st-address').value.trim()   || null,
-        photo_url:         document.getElementById('st-photo').value.trim()     || null,
         instagram:         document.getElementById('st-instagram').value.trim() || null,
         facebook:          document.getElementById('st-facebook').value.trim()  || null,
         whatsapp_contact:  document.getElementById('st-wa').value.trim()        || null,

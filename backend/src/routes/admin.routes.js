@@ -19,6 +19,9 @@ router.put('/:slug/schedules/:professionalId', auth, ctrl.replaceSchedules);
 
 // Negocio
 router.patch('/:slug/business', auth, ctrl.updateBusiness);
+// La foto llega como imagen binaria (el frontend la reduce a ~512px antes de enviarla)
+router.put('/:slug/business/photo',    auth, express.raw({ type: 'image/*', limit: '1mb' }), ctrl.uploadPhoto);
+router.delete('/:slug/business/photo', auth, ctrl.deletePhoto);
 
 // Bloqueos
 router.get('/:slug/blocks',     auth, ctrl.listBlocks);

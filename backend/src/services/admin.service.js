@@ -268,6 +268,57 @@ async function updateBusiness(businessId, fields) {
   return data;
 }
 
+// ─── FOTO DEL NEGOCIO ────────────────────────────────────────────
+
+const PHOTO_BUCKET = 'business-photos';
+const PHOTO_MAX_BYTES = 1024 * 1024;
+
+function detectImage(buf) {
+  if (buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return { ext: 'jpg', type: 'image/jpeg' };
+  if (buf.length > 8 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return { ext: 'png', type: 'image/png' };
+  if (buf.length > 12 && buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return { ext: 'webp', type: 'image/webp' };
+  return null;
+}
+
+async function ensurePhotoBucket() {
+  const { error } = await supabaseAdmin.storage.createBucket(PHOTO_BUCKET, { public: true, fileSizeLimit: PHOTO_MAX_BYTES });
+  if (error && !/already exists|duplicate/i.test(error.message)) throw error;
+}
+
+// Borra del Storage la foto anterior solo si es una de las que subimos nosotros.
+async function removeStoredPhoto(url) {
+  const marker = `/${PHOTO_BUCKET}/`;
+  const i = typeof url === 'string' ? url.indexOf(marker) : -1;
+  if (i === -1) return;
+  await supabaseAdmin.storage.from(PHOTO_BUCKET).remove([decodeURIComponent(url.slice(i + marker.length).split('?')[0])]);
+}
+
+async function uploadBusinessPhoto(biz, buf) {
+  if (!Buffer.isBuffer(buf) || buf.length === 0) throw badRequest('No se recibió ninguna imagen');
+  if (buf.length > PHOTO_MAX_BYTES) throw badRequest('La imagen no puede pesar más de 1 MB');
+  const img = detectImage(buf);
+  if (!img) throw badRequest('Formato no válido. Usa una imagen JPG, PNG o WebP');
+
+  await ensurePhotoBucket();
+  const path = `${biz.id}/logo-${Date.now()}.${img.ext}`;
+  const { error: upErr } = await supabaseAdmin.storage.from(PHOTO_BUCKET).upload(path, buf, { contentType: img.type, cacheControl: '31536000' });
+  if (upErr) throw upErr;
+  const { data: pub } = supabaseAdmin.storage.from(PHOTO_BUCKET).getPublicUrl(path);
+
+  const { data: prev } = await supabase.from('businesses').select('photo_url').eq('id', biz.id).single();
+  const updated = await updateBusiness(biz.id, { photo_url: pub.publicUrl });
+  await removeStoredPhoto(prev?.photo_url).catch(() => {});
+  return updated;
+}
+
+async function deleteBusinessPhoto(biz) {
+  const { data: prev } = await supabase.from('businesses').select('photo_url').eq('id', biz.id).single();
+  const { data, error } = await supabase.from('businesses').update({ photo_url: null }).eq('id', biz.id).select().single();
+  if (error) throw error;
+  await removeStoredPhoto(prev?.photo_url).catch(() => {});
+  return data;
+}
+
 // ─── BLOQUEOS ────────────────────────────────────────────────────
 
 async function listBlocks(businessId) {
@@ -367,7 +418,7 @@ module.exports = {
   listServices, createService, updateService,
   listProfessionals, createProfessional, updateProfessional,
   getSchedules, replaceSchedules,
-  updateBusiness,
+  updateBusiness, uploadBusinessPhoto, deleteBusinessPhoto,
   listBlocks, createBlock, deleteBlock,
   getProfessionalServices, setProfessionalServices,
 };

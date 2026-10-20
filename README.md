@@ -7,8 +7,10 @@ y reciben confirmación y recordatorio por WhatsApp (Twilio) y correo (Resend).
 ## Estructura
 
 ```
-backend/    API REST (Node.js + Express 5 + Supabase)
-frontend/   Páginas HTML estáticas (sin build)
+backend/      API REST (Node.js + Express 5 + Supabase)
+frontend/     Páginas HTML estáticas de la aplicación (sin build)
+agendly-web/  Página de presentación (landing). Los botones apuntan a la app: en producción
+              define AGENDLY_PROD_APP en agendly-web/config.js
 ```
 
 ## Puesta en marcha

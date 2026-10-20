@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agendly — Reservas online para tu negocio</title>
+  <meta name="description" content="Agendly es la plataforma de reservas para negocios de servicios: tu página de reservas, agenda, clientes y avisos automáticos por WhatsApp y correo."/>
+  <link rel="icon" type="image/png" href="assets/icon.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:wght@600;700&display=swap"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css"/>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="config.js"></script>
+</head>
+<body>
+
+  <header class="nav" id="nav">
+    <div class="wrap nav-in">
+      <a href="#top" class="nav-logo" aria-label="Agendly"><img src="assets/logo.png" alt="Agendly"/></a>
+      <nav class="nav-links" aria-label="Principal">
+        <a href="#funciones">Funciones</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#negocios">Para quién</a>
+        <a href="#precio">Precio</a>
+        <a href="#preguntas">Preguntas</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="#" data-app="login.html" class="nav-login">Iniciar sesión</a>
+        <a href="#" data-app="register.html" class="btn btn-primary btn-sm">Crear cuenta</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="wrap hero-in">
+        <div class="hero-copy reveal">
+          <span class="pill"><i class="ti ti-sparkles"></i>Reservas online para negocios de servicios</span>
+          <h1>Automatiza tus reservas y <span class="hl">olvídate del caos</span></h1>
+          <p class="lead">Tus clientes reservan solos desde tu propio link, tú ves toda la agenda en un panel simple y Agendly se encarga de confirmar y recordar. Sin llamadas, sin mensajes de WhatsApp para coordinar horas.</p>
+          <div class="hero-cta">
+            <a href="#" data-app="register.html" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+            <a href="#como-funciona" class="btn btn-ghost btn-lg">Ver cómo funciona</a>
+          </div>
+          <ul class="hero-points">
+            <li><i class="ti ti-check"></i>Gratis para empezar</li>
+            <li><i class="ti ti-check"></i>Sin tarjeta de crédito</li>
+            <li><i class="ti ti-check"></i>Listo en minutos</li>
+          </ul>
+        </div>
+
+        <!-- Maqueta de la página de reservas -->
+        <div class="hero-visual reveal" aria-hidden="true">
+          <div class="mock">
+            <div class="mock-head">
+              <div class="mock-av">BC</div>
+              <div>
+                <div class="mock-name">Barbería Central</div>
+                <div class="mock-sub"><i class="ti ti-map-pin"></i>Santiago</div>
+              </div>
+            </div>
+            <div class="mock-title">¿Qué servicio necesitas?</div>
+            <div class="mock-opt on">
+              <span class="mock-ico"><i class="ti ti-scissors"></i></span>
+              <span class="mock-opt-t"><b>Corte de pelo</b><small>60 min</small></span>
+              <span class="mock-price">$12.000</span>
+            </div>
+            <div class="mock-opt">
+              <span class="mock-ico"><i class="ti ti-scissors"></i></span>
+              <span class="mock-opt-t"><b>Corte + barba</b><small>90 min</small></span>
+              <span class="mock-price">$18.000</span>
+            </div>
+            <div class="mock-slots">
+              <span>10:00</span><span class="on">11:00</span><span>12:30</span><span>16:00</span>
+            </div>
+            <div class="mock-btn">Continuar</div>
+          </div>
+          <div class="notif">
+            <span class="notif-ico"><i class="ti ti-calendar-check"></i></span>
+            <div><b>Nueva reserva</b><small>Hoy · 11:00 · Corte de pelo</small></div>
+            <span class="notif-badge">Confirmada</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FUNCIONES -->
+    <section class="section" id="funciones">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Funciones</span>
+          <h2>Todo lo que necesitas para agendar sin fricción</h2>
+          <p>Pensado para negocios que dejan de llevar la agenda a mano y quieren enfocarse en atender.</p>
+        </div>
+        <div class="grid3">
+          <article class="card reveal"><span class="ico"><i class="ti ti-link"></i></span><h3>Tu página de reservas</h3><p>Cada negocio tiene su propio link para compartir por WhatsApp o Instagram. Tus clientes reservan sin crear cuenta ni instalar nada.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-calendar-check"></i></span><h3>Disponibilidad real</h3><p>Solo se muestran los horarios libres de cada profesional. El sistema impide las dobles reservas, incluso si dos personas reservan al mismo tiempo.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-users"></i></span><h3>Servicios y equipo</h3><p>Define servicios con duración y precio, suma a tus profesionales y asigna qué servicios hace cada uno y en qué horarios.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-calendar-off"></i></span><h3>Bloqueos</h3><p>Bloquea feriados, vacaciones o un horario puntual para todo el negocio o para un profesional. Esos horarios dejan de ofrecerse.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-brand-whatsapp"></i></span><h3>Avisos automáticos</h3><p>Confirmaciones y recordatorios por WhatsApp y correo, además de aviso cuando una reserva se cancela o se reagenda.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-refresh"></i></span><h3>Cancelar y reagendar</h3><p>Tus clientes pueden cambiar su hora desde el enlace que reciben, respetando la anticipación mínima que tú definas. Tú también puedes hacerlo desde el panel.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-calendar-week"></i></span><h3>Calendario del panel</h3><p>Mira tu agenda por día, semana, mes o año, con las reservas pendientes, confirmadas y vencidas a simple vista.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-users-group"></i></span><h3>Ficha de clientes</h3><p>Cada cliente con su historial de reservas. Reconoce a la misma persona aunque escriba su nombre o teléfono distinto cada vez.</p></article>
+          <article class="card reveal"><span class="ico"><i class="ti ti-chart-bar"></i></span><h3>Métricas del negocio</h3><p>Reservas, ingresos, servicios y profesionales más pedidos, hora pico y tasa de cancelación, siempre actualizados.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- CÓMO FUNCIONA -->
+    <section class="section alt" id="como-funciona">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Cómo funciona</span>
+          <h2>De cero a reservas reales en minutos</h2>
+          <p>Un flujo claro, sin configuraciones complicadas ni integraciones raras.</p>
+        </div>
+        <ol class="steps">
+          <li class="step reveal"><span class="step-n">1</span><h3>Crea tu cuenta y tu negocio</h3><p>Elige el tipo de negocio y obtén tu link. Si trabajas tú mismo, puedes registrarte como profesional en un clic.</p></li>
+          <li class="step reveal"><span class="step-n">2</span><h3>Configura servicios y horarios</h3><p>Agrega tus servicios con duración y precio, a tu equipo y los días y horas en que atiendes.</p></li>
+          <li class="step reveal"><span class="step-n">3</span><h3>Comparte tu link</h3><p>Ponlo en tu Instagram, Google o WhatsApp. Tus clientes eligen servicio, profesional y hora en segundos.</p></li>
+          <li class="step reveal"><span class="step-n">4</span><h3>Gestiona desde el panel</h3><p>Confirma, reagenda o cancela, revisa tu calendario y deja que Agendly avise a tus clientes.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- PARA QUIÉN -->
+    <section class="section" id="negocios">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Para quién</span>
+          <h2>Hecho para negocios que trabajan con citas</h2>
+          <p>Cada uno con sus servicios, duraciones y precios. Si tu negocio atiende por hora, Agendly te sirve.</p>
+        </div>
+        <div class="grid3 biz">
+          <div class="chip reveal"><i class="ti ti-scissors"></i><div><b>Barberías</b><span>Turnos por barbero, cortes, barba y combos.</span></div></div>
+          <div class="chip reveal"><i class="ti ti-brush"></i><div><b>Centros de uñas</b><span>Servicios con tiempos distintos según la técnica.</span></div></div>
+          <div class="chip reveal"><i class="ti ti-eye"></i><div><b>Lashistas</b><span>Sesiones largas sin solapamientos en tu agenda.</span></div></div>
+          <div class="chip reveal"><i class="ti ti-sparkles"></i><div><b>Centros de estética</b><span>Todo el equipo coordinado desde un solo panel.</span></div></div>
+          <div class="chip reveal"><i class="ti ti-massage"></i><div><b>Masajistas</b><span>Sesiones de 30, 60 o 90 minutos con su precio.</span></div></div>
+          <div class="chip reveal"><i class="ti ti-stethoscope"></i><div><b>Consultas y salud</b><span>Profesionales con horarios independientes.</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRECIO -->
+    <section class="section alt" id="precio">
+      <div class="wrap">
+        <div class="head reveal">
+          <span class="eyebrow">Precio</span>
+          <h2>Empieza gratis, sin tarjeta</h2>
+          <p>Hoy Agendly es gratis. Si más adelante sumamos planes de pago, te avisaremos con anticipación y nunca se cobrará sin tu consentimiento.</p>
+        </div>
+        <div class="price reveal">
+          <div class="price-top">
+            <div><div class="price-name">Plan Free</div><div class="price-amount">$0 <small>/ mes</small></div></div>
+            <a href="#" data-app="register.html" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+          </div>
+          <ul class="price-list">
+            <li><i class="ti ti-check"></i>Página de reservas propia</li>
+            <li><i class="ti ti-check"></i>Servicios y profesionales</li>
+            <li><i class="ti ti-check"></i>Horarios y bloqueos</li>
+            <li><i class="ti ti-check"></i>Confirmaciones y recordatorios</li>
+            <li><i class="ti ti-check"></i>Cancelar y reagendar</li>
+            <li><i class="ti ti-check"></i>Calendario y ficha de clientes</li>
+            <li><i class="ti ti-check"></i>Métricas del negocio</li>
+            <li><i class="ti ti-check"></i>Funciona en celular y computador</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- PREGUNTAS -->
+    <section class="section" id="preguntas">
+      <div class="wrap narrow">
+        <div class="head reveal">
+          <span class="eyebrow">Preguntas frecuentes</span>
+          <h2>Lo que suelen preguntarnos</h2>
+        </div>
+        <div class="faq reveal">
+          <details><summary>¿Cuánto cuesta Agendly?</summary><p>Hoy es gratis y no pide tarjeta de crédito. Si en el futuro incorporamos planes de pago, te avisaremos antes de cualquier cambio.</p></details>
+          <details><summary>¿Mis clientes tienen que crear una cuenta?</summary><p>No. Entran a tu link, eligen servicio, profesional y horario, dejan su nombre y teléfono, y reservan.</p></details>
+          <details><summary>¿Cómo evitan las dobles reservas?</summary><p>El sistema solo ofrece horarios libres y vuelve a comprobarlo en el momento de confirmar. Aunque dos personas reserven a la vez, una de ellas recibe un aviso para elegir otra hora.</p></details>
+          <details><summary>¿Qué avisos reciben mis clientes?</summary><p>Una confirmación al reservar, un recordatorio antes de la cita y un aviso si la reserva se cancela o se reagenda, por WhatsApp y correo.</p></details>
+          <details><summary>¿Pueden cancelar o cambiar su hora?</summary><p>Sí, desde el enlace que reciben. Tú defines con cuántas horas de anticipación pueden hacerlo, y también puedes cambiar reservas desde tu panel.</p></details>
+          <details><summary>¿Puedo tener varios profesionales?</summary><p>Sí. Cada profesional tiene sus propios servicios y horarios, y tus clientes pueden elegir con quién reservar.</p></details>
+          <details><summary>¿Necesito conocimientos técnicos?</summary><p>No. El registro te guía paso a paso y el panel está pensado para usarse sin capacitación, desde el celular o el computador.</p></details>
+          <details><summary>¿Qué pasa con los datos de mi negocio y mis clientes?</summary><p>Cada negocio solo ve sus propios datos. Puedes leer cómo los tratamos en nuestra <a href="#" data-app="privacidad.html">política de privacidad</a>.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA FINAL -->
+    <section class="cta-wrap">
+      <div class="wrap">
+        <div class="cta reveal">
+          <h2>Empieza a recibir reservas hoy</h2>
+          <p>Crea tu cuenta, configura tu negocio y comparte tu link.</p>
+          <a href="#" data-app="register.html" class="btn btn-light btn-lg">Crear cuenta gratis</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap foot-in">
+      <div class="foot-brand">
+        <img src="assets/logo.png" alt="Agendly"/>
+        <p>Reservas online para negocios de servicios.</p>
+      </div>
+      <nav class="foot-links" aria-label="Pie de página">
+        <a href="#funciones">Funciones</a>
+        <a href="#como-funciona">Cómo funciona</a>
+        <a href="#" data-app="terminos.html">Términos de servicio</a>
+        <a href="#" data-app="privacidad.html">Política de privacidad</a>
+        <a href="#" data-app="login.html">Iniciar sesión</a>
+        <a href="mailto:contacto@agendly.cl">contacto@agendly.cl</a>
+      </nav>
+    </div>
+    <div class="wrap foot-copy">© 2026 Agendly. Todos los derechos reservados.</div>
+  </footer>
+
+  <script>
+    // Aparición suave al hacer scroll (sin JS todo se ve igual) y sombra de la barra superior
+    (function () {
+      var els = document.querySelectorAll('.reveal');
+      if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('js-reveal');
+        var io = new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+        }, { threshold: 0.12 });
+        els.forEach(function (el) { io.observe(el); });
+      }
+      var nav = document.getElementById('nav');
+      var onScroll = function () { nav.classList.toggle('scrolled', scrollY > 8); };
+      addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    })();
+  </script>
+</body>
+</html>

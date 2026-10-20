@@ -21,6 +21,16 @@
         "frontend"
       ],
       "port": 5500
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        ".claude/dev_server.py",
+        "5600",
+        "agendly-web"
+      ],
+      "port": 5600
     }
   ]
 }
